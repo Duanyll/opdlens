@@ -164,13 +164,14 @@ def hidden_mse(
     teacher_hidden: torch.Tensor,
     loss_mask: torch.Tensor,
     *,
-    aux_max_tokens: int = 512,
+    aux_max_tokens: int = 0,
     token_index: torch.Tensor | None = None,
+    compute_fp32: bool = False,
 ) -> torch.Tensor:
     """Arm D: raw-hidden MSE (teacher side already mapped through the bridge).
 
-    Both ``[T, d_s]``. Compute in fp32, then mean over ``d`` and over one shared
-    completion-token subset.
+    Both ``[T, d_s]``. Mean over ``d`` and over the selected completion tokens.
+    ``compute_fp32=False`` preserves the input-dtype behavior of existing configs.
     """
     idx = (
         sample_aux_token_index(loss_mask, aux_max_tokens)
@@ -178,6 +179,12 @@ def hidden_mse(
         else token_index
     )
     if idx.numel() == 0:
-        return student_hidden.float().sum() * 0.0
-    residual = student_hidden[idx].float() - teacher_hidden[idx].float()
+        empty_source = student_hidden.float() if compute_fp32 else student_hidden
+        return empty_source.sum() * 0.0
+    student_selected = student_hidden[idx]
+    teacher_selected = teacher_hidden[idx]
+    if compute_fp32:
+        student_selected = student_selected.float()
+        teacher_selected = teacher_selected.float()
+    residual = student_selected - teacher_selected
     return residual.pow(2).mean(dim=-1).mean()

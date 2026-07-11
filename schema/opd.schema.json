@@ -280,6 +280,15 @@
           "title": "Aux Max Tokens",
           "type": "integer"
         },
+        "aux_token_policy": {
+          "default": "compat",
+          "enum": [
+            "compat",
+            "shared"
+          ],
+          "title": "Aux Token Policy",
+          "type": "string"
+        },
         "kl": {
           "default": "forward",
           "enum": [
@@ -299,6 +308,15 @@
         },
         "bridge_path": {
           "title": "Bridge Path",
+          "type": "string"
+        },
+        "mse_dtype": {
+          "default": "input",
+          "enum": [
+            "input",
+            "fp32"
+          ],
+          "title": "Mse Dtype",
           "type": "string"
         }
       },
@@ -332,6 +350,15 @@
           "default": 512,
           "title": "Aux Max Tokens",
           "type": "integer"
+        },
+        "aux_token_policy": {
+          "default": "compat",
+          "enum": [
+            "compat",
+            "shared"
+          ],
+          "title": "Aux Token Policy",
+          "type": "string"
         },
         "kl": {
           "default": "forward",
@@ -472,6 +499,15 @@
           "title": "Aux Max Tokens",
           "type": "integer"
         },
+        "aux_token_policy": {
+          "default": "compat",
+          "enum": [
+            "compat",
+            "shared"
+          ],
+          "title": "Aux Token Policy",
+          "type": "string"
+        },
         "kl": {
           "default": "forward",
           "enum": [
@@ -517,6 +553,15 @@
           "default": 512,
           "title": "Aux Max Tokens",
           "type": "integer"
+        },
+        "aux_token_policy": {
+          "default": "compat",
+          "enum": [
+            "compat",
+            "shared"
+          ],
+          "title": "Aux Token Policy",
+          "type": "string"
         },
         "kl": {
           "default": "forward",
@@ -851,6 +896,15 @@
           "default": 512,
           "title": "Aux Max Tokens",
           "type": "integer"
+        },
+        "aux_token_policy": {
+          "default": "compat",
+          "enum": [
+            "compat",
+            "shared"
+          ],
+          "title": "Aux Token Policy",
+          "type": "string"
         },
         "kl": {
           "default": "forward",

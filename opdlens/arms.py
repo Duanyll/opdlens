@@ -42,6 +42,8 @@ class BaseArm(BaseModel):
     aux_weight: float = 0.0
     temperature: float = 1.0
     aux_max_tokens: int = 512
+    aux_token_policy: Literal["compat", "shared"] = "compat"
+    """``compat`` preserves pre-knob per-arm sampling; ``shared`` caps once per sequence."""
     kl: KLDir = "forward"
     teacher_layers: tuple[int, ...] = ()
     """Teacher block indices to supervise (empty for arm A)."""
@@ -74,6 +76,11 @@ class BaseArm(BaseModel):
     def _mean_over_pairs(self, terms: list[torch.Tensor]) -> torch.Tensor:
         return torch.stack(terms).mean()
 
+    def _shared_token_index(self, loss_mask: torch.Tensor) -> torch.Tensor | None:
+        if self.aux_token_policy == "shared":
+            return sample_aux_token_index(loss_mask, self.aux_max_tokens)
+        return None
+
 
 class LogitsArm(BaseArm):
     """Arm A — plain OPD, no auxiliary supervision."""
@@ -90,7 +97,7 @@ class LogitLensArm(BaseArm):
     type: Literal["logit_lens"] = "logit_lens"
 
     def aux_loss(self, student, teacher, loss_mask, spec, *, unembed_s, unembed_t):
-        token_index = sample_aux_token_index(loss_mask, self.aux_max_tokens)
+        token_index = self._shared_token_index(loss_mask)
         terms = [
             lens_kl(
                 student.hidden[ls],
@@ -136,7 +143,7 @@ class JLensArm(BaseArm):
                 f"fitted source layers are {sorted(jacobians)}. Re-fit the lens with "
                 f"--source-layers matching this arm's teacher_layers."
             )
-        token_index = sample_aux_token_index(loss_mask, self.aux_max_tokens)
+        token_index = self._shared_token_index(loss_mask)
         terms: list[torch.Tensor] = []
         for lt, ls in zip(spec.teacher_layers, spec.student_layers, strict=True):
             h = teacher.hidden[lt]
@@ -165,6 +172,8 @@ class HiddenMseArm(BaseArm):
     type: Literal["hidden_mse"] = "hidden_mse"
     bridge_path: str
     """Path to a ``bridge.pt`` = ``{"W": [d_t, d_s], "b_x": [d_t], "b_y": [d_s]}``."""
+    mse_dtype: Literal["input", "fp32"] = "input"
+    """Compute dtype; the default preserves pre-knob input-dtype behavior."""
 
     _bridges: dict[int, dict[str, torch.Tensor]] | None = PrivateAttr(default=None)
     _bridge_student_layers: dict[int, int] = PrivateAttr(default_factory=dict)
@@ -195,8 +204,9 @@ class HiddenMseArm(BaseArm):
                     f"{self.bridge_path} bridge for teacher layer {layer} is "
                     f"missing {missing}"
                 )
+            dtype = torch.float32 if self.mse_dtype == "fp32" else ref.dtype
             bridges[layer] = {
-                key: params[key].to(device=ref.device, dtype=torch.float32)
+                key: params[key].to(device=ref.device, dtype=dtype)
                 for key in ("W", "b_x", "b_y")
             }
             if layer >= 0 and "l_s" in params:
@@ -221,17 +231,20 @@ class HiddenMseArm(BaseArm):
                 f"{self.bridge_path} maps teacher layer {teacher_layer} to student "
                 f"layer {fitted_student_layer}, but this arm maps it to {student_layer}"
             )
-        return (h.float() - b["b_x"]) @ b["W"] + b["b_y"]
+        bridge_input = h.float() if self.mse_dtype == "fp32" else h
+        return (bridge_input - b["b_x"]) @ b["W"] + b["b_y"]
 
     def aux_loss(self, student, teacher, loss_mask, spec, *, unembed_s, unembed_t):
-        token_index = sample_aux_token_index(loss_mask, self.aux_max_tokens)
+        token_index = self._shared_token_index(loss_mask)
+        max_tokens = self.aux_max_tokens if token_index is not None else 0
         terms = [
             hidden_mse(
                 student.hidden[ls],
                 self._apply_bridge(teacher.hidden[lt], lt, ls),
                 loss_mask,
-                aux_max_tokens=self.aux_max_tokens,
+                aux_max_tokens=max_tokens,
                 token_index=token_index,
+                compute_fp32=self.mse_dtype == "fp32",
             )
             for lt, ls in zip(spec.teacher_layers, spec.student_layers, strict=True)
         ]
@@ -298,7 +311,7 @@ class SymmetricJLensArm(BaseArm):
             "teacher_layers",
         )
 
-        token_index = sample_aux_token_index(loss_mask, self.aux_max_tokens)
+        token_index = self._shared_token_index(loss_mask)
         terms: list[torch.Tensor] = []
         for lt, ls in zip(spec.teacher_layers, spec.student_layers, strict=True):
             student_hidden = student.hidden[ls]

@@ -23,6 +23,7 @@
   "arm": {
     "type": "symmetric_jlens",
     "aux_weight": 0.01,
+    "aux_token_policy": "shared",
     "teacher_layers": [
       8,
       16,

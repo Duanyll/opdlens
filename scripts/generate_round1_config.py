@@ -15,8 +15,17 @@ OPDLENS_ROOT = "/gdata/users/duanyll/opdlens"
 TEACHER_LAYERS = [8, 16, 24]
 
 
-def arm_config(arm: str, aux_weight: float) -> tuple[str, dict[str, Any]]:
-    shared = {"aux_weight": aux_weight, "teacher_layers": TEACHER_LAYERS}
+def arm_config(
+    arm: str,
+    aux_weight: float,
+    aux_token_policy: str,
+    mse_dtype: str,
+) -> tuple[str, dict[str, Any]]:
+    shared = {
+        "aux_weight": aux_weight,
+        "aux_token_policy": aux_token_policy,
+        "teacher_layers": TEACHER_LAYERS,
+    }
     configs: dict[str, tuple[str, dict[str, Any]]] = {
         "b": (
             "logitlens",
@@ -36,6 +45,7 @@ def arm_config(arm: str, aux_weight: float) -> tuple[str, dict[str, Any]]:
             {
                 "type": "hidden_mse",
                 **shared,
+                "mse_dtype": mse_dtype,
                 "bridge_path": f"{ARTIFACT_ROOT}/qwen3p5_bridge/bridge.pt",
             },
         ),
@@ -60,13 +70,19 @@ def main() -> None:
     parser.add_argument("--arm", choices="bcde", required=True)
     parser.add_argument("--finetune", choices=("full", "lora"), required=True)
     parser.add_argument("--aux-weight", type=float, default=0.1)
+    parser.add_argument(
+        "--aux-token-policy", choices=("compat", "shared"), default="compat"
+    )
+    parser.add_argument("--mse-dtype", choices=("input", "fp32"), default="input")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
 
     baseline_path = Path(f"examples/repro_gkd_2b_{args.finetune}.jsonc")
     baseline = load_config_file(str(baseline_path))
     config = deepcopy(baseline)
-    tag, config["arm"] = arm_config(args.arm, args.aux_weight)
+    tag, config["arm"] = arm_config(
+        args.arm, args.aux_weight, args.aux_token_policy, args.mse_dtype
+    )
     run_name = f"{tag}-{args.finetune}"
     if args.aux_weight != 0.1:
         run_name += f"-aux{args.aux_weight:g}"

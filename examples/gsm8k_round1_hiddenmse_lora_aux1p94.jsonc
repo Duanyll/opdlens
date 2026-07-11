@@ -29,11 +29,13 @@
   "arm": {
     "type": "hidden_mse",
     "aux_weight": 1.94,
+    "aux_token_policy": "shared",
     "teacher_layers": [
       8,
       16,
       24
     ],
+    "mse_dtype": "fp32",
     "bridge_path": "/gdata/users/duanyll/jlens/qwen3p5_bridge/bridge.pt"
   },
   "base_beta": 0.5,

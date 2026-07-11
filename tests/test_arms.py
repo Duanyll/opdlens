@@ -54,6 +54,7 @@ def test_logit_lens_layers_share_one_token_sample(monkeypatch):
             "type": "logit_lens",
             "aux_weight": 0.1,
             "aux_max_tokens": 3,
+            "aux_token_policy": "shared",
             "teacher_layers": [2, 4],
         }
     )
@@ -87,6 +88,25 @@ def test_logit_lens_layers_share_one_token_sample(monkeypatch):
     expected = torch.tensor([7.0, 6.0, 5.0])
     assert calls == 1
     assert all(torch.equal(seen, expected) for seen in student_seen + teacher_seen)
+
+    compat_arm = parse_arm(
+        {
+            "type": "logit_lens",
+            "aux_weight": 0.1,
+            "aux_max_tokens": 3,
+            "teacher_layers": [2, 4],
+        }
+    )
+    compat_arm.aux_loss(
+        student,
+        teacher,
+        torch.ones(8, dtype=torch.bool),
+        spec,
+        unembed_s=student_readout,
+        unembed_t=teacher_readout,
+    )
+    assert compat_arm.aux_token_policy == "compat"
+    assert calls == 3
 
 
 def test_jlens_arm_finite(tmp_path):
@@ -176,6 +196,8 @@ def test_hidden_mse_caps_shared_tokens_and_uses_fp32(tmp_path, monkeypatch):
             "type": "hidden_mse",
             "aux_weight": 1.94,
             "aux_max_tokens": 2,
+            "aux_token_policy": "shared",
+            "mse_dtype": "fp32",
             "teacher_layers": [2, 4],
             "bridge_path": str(path),
         }
@@ -205,6 +227,31 @@ def test_hidden_mse_caps_shared_tokens_and_uses_fp32(tmp_path, monkeypatch):
     assert calls == 1
     assert aux.dtype == torch.float32
     assert torch.allclose(aux, torch.tensor((5.0**2 + 4.0**2) / 2))
+
+    compat_arm = parse_arm(
+        {
+            "type": "hidden_mse",
+            "aux_weight": 1.94,
+            "aux_max_tokens": 2,
+            "teacher_layers": [2, 4],
+            "bridge_path": str(path),
+        }
+    )
+    compat_aux, _ = compat_arm.aux_loss(
+        student,
+        teacher,
+        torch.ones(seq, dtype=torch.bool),
+        spec,
+        unembed_s=None,
+        unembed_t=None,
+    )
+    assert compat_arm.aux_token_policy == "compat"
+    assert compat_arm.mse_dtype == "input"
+    assert calls == 1
+    assert compat_aux.dtype == torch.bfloat16
+    assert float(compat_aux) == pytest.approx(
+        sum(i**2 for i in range(seq)) / seq, rel=0.01
+    )
 
 
 def test_hidden_mse_arm_supports_per_layer_bridge(tmp_path):
