@@ -1,0 +1,35 @@
+{
+  // Arm C — Jacobian-lens aux. IDENTICAL to arm_a.jsonc except the "arm" block.
+  // Requires a fitted lens.pt (python -m opdlens.fit.fit_jlens ...).
+  "$schema": "../schema/opd.schema.json",
+  "launch": { "type": "opd", "devices": "all" },
+  "experiment_name": "opd-gsm8k",
+  "seed": 42,
+
+  "student": { "model_id": "Qwen/Qwen3-1.7B", "dtype": "bf16" },
+  "teacher": { "model_id": "Qwen/Qwen3-8B", "dtype": "bf16" },
+
+  "arm": {
+    "type": "jspace",
+    "aux_weight": 0.1,
+    "teacher_layers": [8, 12, 16],
+    "temperature": 1.0,
+    "jacobian_path": "lens.pt"
+  },
+
+  "train_benchmark": { "type": "gsm8k", "split": "train" },
+  "eval_benchmarks": [
+    { "type": "gsm8k", "max_samples": 200, "avg_k": 4 }
+  ],
+
+  "rollout_backend": "vllm",
+  "num_prompts_per_step": 8,
+  "rollout_temperature": 1.0,
+  "rollout_max_tokens": 512,
+
+  "base_temperature": 1.0,
+  "train_steps": 200,
+  "eval_steps": 50,
+  "checkpoint_interval": 50,
+  "optimizer_config": { "class_name": "AdamW", "lr": 2e-6 }
+}

@@ -1,0 +1,91 @@
+[project]
+name = "opdlens"
+version = "0.1.0"
+description = "On-policy distillation with intermediate-layer (lens) supervision"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "datasets>=5.0.0",
+    "einops>=0.8.2",
+    "json5>=0.15.0",
+    "jsonpath-ng>=1.8.0",
+    "math-verify>=0.9.0",
+    "numpy>=1.26,<2.5",
+    "pydantic>=2.13.4",
+    "rich>=15.0.0",
+    "torch>=2.11,<2.12",
+    "torchdata>=0.11.0",
+    "trackio>=0.30.3",
+    "transformers>=5.13.0",
+    "vllm==0.24.0",
+]
+
+[project.scripts]
+opdlens = "opdlens.scripts.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.11.0,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "opdlens"
+module-root = ""
+
+# torch (and, later, the vllm-pinned torch==2.11) come from the CUDA 13.0 wheel
+# index; everything else from the default mirror. Colocated in-process vLLM must
+# share the training env, so torch is held to the 2.11 line vllm 0.24 pins.
+[tool.uv.sources]
+torch = [
+  { index = "pytorch", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+
+[[tool.uv.index]]
+url = "https://mirrors.aliyun.com/pypi/simple/"
+default = true
+
+[[tool.uv.index]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle
+    "F",   # Pyflakes
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "T20", # flake8-print
+    "I",   # isort
+    "C90", # mccabe
+]
+ignore = [
+    "E501", # line too long
+    "E741", # ambiguous variable name
+    "B027", # empty function in abstract class
+]
+exclude = ["examples/**", "opdlens/jlens/**"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.pyright]
+typeCheckingMode = "standard"
+# HuggingFace officially uses private imports a lot, so we disable the check here.
+reportPrivateImportUsage = "none"
+# Pydantic discriminated unions require Literal overrides of `type` fields in subclasses.
+reportIncompatibleVariableOverride = "none"
+reportUnnecessaryTypeIgnoreComment = "error"
+ignore = [
+  ".venv/**",
+  "**/site-packages/**",
+  "opdlens/jlens/**",
+]
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.411",
+    "pytest>=9.1.1",
+    "ruff>=0.15.21",
+    "scipy>=1.18.0",
+]

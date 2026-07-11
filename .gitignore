@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# Run artifacts
+runs/
+logs/
+checkpoints/
+wandb/
+
+# Fitted artifacts + model weights
+*.pt
+*.safetensors
+
+# Machine-specific launchers / in-progress configs / scratch
+local/
+draft/
+data/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,22 @@
+{
+  // Tiny end-to-end smoke: same small model as student+teacher, HF-generate
+  // backend, 2 steps. Validates rollout → teacher/student forward → loss → step →
+  // eval → checkpoint on a real GPU without a big download.
+  "launch": { "type": "opd", "devices": 1 },
+  "experiment_name": "opd-smoke",
+  "student": { "model_id": "Qwen/Qwen3-0.6B", "dtype": "bf16", "attn_impl": "sdpa" },
+  "teacher": { "model_id": "Qwen/Qwen3-0.6B", "dtype": "bf16", "attn_impl": "sdpa" },
+  "arm": { "type": "logits" },
+  "train_benchmark": { "type": "gsm8k", "split": "train", "max_samples": 16 },
+  "eval_benchmarks": [
+    { "type": "gsm8k", "split": "test", "max_samples": 4, "avg_k": 1, "eval_max_tokens": 64 }
+  ],
+  "rollout_backend": "hf",
+  "num_prompts_per_step": 2,
+  "rollout_max_tokens": 64,
+  "train_steps": 2,
+  "eval_steps": 2,
+  "eval_max_samples": 4,
+  "checkpoint_interval": 2,
+  "optimizer_config": { "class_name": "AdamW", "lr": 1e-6 }
+}

@@ -1,0 +1,1021 @@
+{
+  "$defs": {
+    "AimeBenchmark": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "aime",
+          "default": "aime",
+          "title": "Type",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "hf_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hf Id"
+        },
+        "hf_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hf Name"
+        },
+        "split": {
+          "default": "test",
+          "title": "Split",
+          "type": "string"
+        },
+        "question_key": {
+          "default": "problem",
+          "title": "Question Key",
+          "type": "string"
+        },
+        "answer_key": {
+          "default": "answer",
+          "title": "Answer Key",
+          "type": "string"
+        },
+        "max_samples": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Samples"
+        },
+        "system_prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "Solve the following problem step by step. Put your final answer within \\boxed{}.",
+          "title": "System Prompt"
+        },
+        "eval_temperature": {
+          "default": 0.6,
+          "title": "Eval Temperature",
+          "type": "number"
+        },
+        "eval_top_p": {
+          "default": 1.0,
+          "title": "Eval Top P",
+          "type": "number"
+        },
+        "eval_max_tokens": {
+          "default": 1024,
+          "title": "Eval Max Tokens",
+          "type": "integer"
+        },
+        "avg_k": {
+          "default": 8,
+          "title": "Avg K",
+          "type": "integer"
+        },
+        "year": {
+          "default": 2024,
+          "title": "Year",
+          "type": "integer"
+        }
+      },
+      "title": "AimeBenchmark",
+      "type": "object"
+    },
+    "Gsm8kBenchmark": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "gsm8k",
+          "default": "gsm8k",
+          "title": "Type",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "hf_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "openai/gsm8k",
+          "title": "Hf Id"
+        },
+        "hf_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "main",
+          "title": "Hf Name"
+        },
+        "split": {
+          "default": "test",
+          "title": "Split",
+          "type": "string"
+        },
+        "question_key": {
+          "default": "question",
+          "title": "Question Key",
+          "type": "string"
+        },
+        "answer_key": {
+          "default": "answer",
+          "title": "Answer Key",
+          "type": "string"
+        },
+        "max_samples": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Samples"
+        },
+        "system_prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "Solve the following problem step by step. Put your final answer within \\boxed{}.",
+          "title": "System Prompt"
+        },
+        "eval_temperature": {
+          "default": 0.6,
+          "title": "Eval Temperature",
+          "type": "number"
+        },
+        "eval_top_p": {
+          "default": 1.0,
+          "title": "Eval Top P",
+          "type": "number"
+        },
+        "eval_max_tokens": {
+          "default": 1024,
+          "title": "Eval Max Tokens",
+          "type": "integer"
+        },
+        "avg_k": {
+          "default": 8,
+          "title": "Avg K",
+          "type": "integer"
+        }
+      },
+      "title": "Gsm8kBenchmark",
+      "type": "object"
+    },
+    "HiddenMseArm": {
+      "additionalProperties": false,
+      "description": "Arm D \u2014 OPRD-style raw-hidden MSE through a frozen affine bridge.",
+      "properties": {
+        "type": {
+          "const": "hidden_mse",
+          "default": "hidden_mse",
+          "title": "Type",
+          "type": "string"
+        },
+        "aux_weight": {
+          "default": 0.0,
+          "title": "Aux Weight",
+          "type": "number"
+        },
+        "temperature": {
+          "default": 1.0,
+          "title": "Temperature",
+          "type": "number"
+        },
+        "aux_max_tokens": {
+          "default": 512,
+          "title": "Aux Max Tokens",
+          "type": "integer"
+        },
+        "kl": {
+          "default": "forward",
+          "enum": [
+            "forward",
+            "reverse"
+          ],
+          "title": "Kl",
+          "type": "string"
+        },
+        "teacher_layers": {
+          "default": [],
+          "items": {
+            "type": "integer"
+          },
+          "title": "Teacher Layers",
+          "type": "array"
+        },
+        "bridge_path": {
+          "title": "Bridge Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "bridge_path"
+      ],
+      "title": "HiddenMseArm",
+      "type": "object"
+    },
+    "JLensArm": {
+      "additionalProperties": false,
+      "description": "Arm C \u2014 teacher Jacobian-lens readout ``unembed_t(h @ J\u1d40)``.",
+      "properties": {
+        "type": {
+          "const": "jspace",
+          "default": "jspace",
+          "title": "Type",
+          "type": "string"
+        },
+        "aux_weight": {
+          "default": 0.0,
+          "title": "Aux Weight",
+          "type": "number"
+        },
+        "temperature": {
+          "default": 1.0,
+          "title": "Temperature",
+          "type": "number"
+        },
+        "aux_max_tokens": {
+          "default": 512,
+          "title": "Aux Max Tokens",
+          "type": "integer"
+        },
+        "kl": {
+          "default": "forward",
+          "enum": [
+            "forward",
+            "reverse"
+          ],
+          "title": "Kl",
+          "type": "string"
+        },
+        "teacher_layers": {
+          "default": [],
+          "items": {
+            "type": "integer"
+          },
+          "title": "Teacher Layers",
+          "type": "array"
+        },
+        "jacobian_path": {
+          "title": "Jacobian Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "jacobian_path"
+      ],
+      "title": "JLensArm",
+      "type": "object"
+    },
+    "LanguageModel": {
+      "additionalProperties": false,
+      "description": "An HF CausalLM plus its tokenizer, with layer-capturing forward + unembed.",
+      "properties": {
+        "model_id": {
+          "title": "Model Id",
+          "type": "string"
+        },
+        "dtype": {
+          "default": "bf16",
+          "enum": [
+            "bf16",
+            "fp16",
+            "fp32"
+          ],
+          "title": "Dtype",
+          "type": "string"
+        },
+        "attn_impl": {
+          "default": "sdpa",
+          "title": "Attn Impl",
+          "type": "string"
+        },
+        "trust_remote_code": {
+          "default": true,
+          "title": "Trust Remote Code",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "model_id"
+      ],
+      "title": "LanguageModel",
+      "type": "object"
+    },
+    "LaunchConfig": {
+      "additionalProperties": false,
+      "description": "How to launch: process count + extra env. The trainer type is fixed to\n``opd`` (opdlens has a single trainer; no polymorphic registry).",
+      "properties": {
+        "type": {
+          "default": "opd",
+          "title": "Type",
+          "type": "string"
+        },
+        "devices": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "const": "all",
+              "type": "string"
+            }
+          ],
+          "default": "all",
+          "title": "Devices"
+        },
+        "env": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "title": "Env",
+          "type": "object"
+        }
+      },
+      "title": "LaunchConfig",
+      "type": "object"
+    },
+    "LogitLensArm": {
+      "additionalProperties": false,
+      "description": "Arm B \u2014 teacher logit-lens readout ``unembed_t(h)`` vs student logit-lens.",
+      "properties": {
+        "type": {
+          "const": "logit_lens",
+          "default": "logit_lens",
+          "title": "Type",
+          "type": "string"
+        },
+        "aux_weight": {
+          "default": 0.0,
+          "title": "Aux Weight",
+          "type": "number"
+        },
+        "temperature": {
+          "default": 1.0,
+          "title": "Temperature",
+          "type": "number"
+        },
+        "aux_max_tokens": {
+          "default": 512,
+          "title": "Aux Max Tokens",
+          "type": "integer"
+        },
+        "kl": {
+          "default": "forward",
+          "enum": [
+            "forward",
+            "reverse"
+          ],
+          "title": "Kl",
+          "type": "string"
+        },
+        "teacher_layers": {
+          "default": [],
+          "items": {
+            "type": "integer"
+          },
+          "title": "Teacher Layers",
+          "type": "array"
+        }
+      },
+      "title": "LogitLensArm",
+      "type": "object"
+    },
+    "LogitsArm": {
+      "additionalProperties": false,
+      "description": "Arm A \u2014 plain OPD, no auxiliary supervision.",
+      "properties": {
+        "type": {
+          "const": "logits",
+          "default": "logits",
+          "title": "Type",
+          "type": "string"
+        },
+        "aux_weight": {
+          "default": 0.0,
+          "title": "Aux Weight",
+          "type": "number"
+        },
+        "temperature": {
+          "default": 1.0,
+          "title": "Temperature",
+          "type": "number"
+        },
+        "aux_max_tokens": {
+          "default": 512,
+          "title": "Aux Max Tokens",
+          "type": "integer"
+        },
+        "kl": {
+          "default": "forward",
+          "enum": [
+            "forward",
+            "reverse"
+          ],
+          "title": "Kl",
+          "type": "string"
+        },
+        "teacher_layers": {
+          "default": [],
+          "items": {
+            "type": "integer"
+          },
+          "title": "Teacher Layers",
+          "type": "array"
+        }
+      },
+      "title": "LogitsArm",
+      "type": "object"
+    },
+    "Math500Benchmark": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "math500",
+          "default": "math500",
+          "title": "Type",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "hf_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "HuggingFaceH4/MATH-500",
+          "title": "Hf Id"
+        },
+        "hf_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hf Name"
+        },
+        "split": {
+          "default": "test",
+          "title": "Split",
+          "type": "string"
+        },
+        "question_key": {
+          "default": "problem",
+          "title": "Question Key",
+          "type": "string"
+        },
+        "answer_key": {
+          "default": "answer",
+          "title": "Answer Key",
+          "type": "string"
+        },
+        "max_samples": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Samples"
+        },
+        "system_prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "Solve the following problem step by step. Put your final answer within \\boxed{}.",
+          "title": "System Prompt"
+        },
+        "eval_temperature": {
+          "default": 0.6,
+          "title": "Eval Temperature",
+          "type": "number"
+        },
+        "eval_top_p": {
+          "default": 1.0,
+          "title": "Eval Top P",
+          "type": "number"
+        },
+        "eval_max_tokens": {
+          "default": 1024,
+          "title": "Eval Max Tokens",
+          "type": "integer"
+        },
+        "avg_k": {
+          "default": 8,
+          "title": "Avg K",
+          "type": "integer"
+        }
+      },
+      "title": "Math500Benchmark",
+      "type": "object"
+    },
+    "MathTrainBenchmark": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "math_train",
+          "default": "math_train",
+          "title": "Type",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "hf_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hf Id"
+        },
+        "hf_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hf Name"
+        },
+        "split": {
+          "default": "train",
+          "title": "Split",
+          "type": "string"
+        },
+        "question_key": {
+          "default": "question",
+          "title": "Question Key",
+          "type": "string"
+        },
+        "answer_key": {
+          "default": "answer",
+          "title": "Answer Key",
+          "type": "string"
+        },
+        "max_samples": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Samples"
+        },
+        "system_prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "Solve the following problem step by step. Put your final answer within \\boxed{}.",
+          "title": "System Prompt"
+        },
+        "eval_temperature": {
+          "default": 0.6,
+          "title": "Eval Temperature",
+          "type": "number"
+        },
+        "eval_top_p": {
+          "default": 1.0,
+          "title": "Eval Top P",
+          "type": "number"
+        },
+        "eval_max_tokens": {
+          "default": 1024,
+          "title": "Eval Max Tokens",
+          "type": "integer"
+        },
+        "avg_k": {
+          "default": 8,
+          "title": "Avg K",
+          "type": "integer"
+        }
+      },
+      "title": "MathTrainBenchmark",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "launch": {
+      "$ref": "#/$defs/LaunchConfig"
+    },
+    "seed": {
+      "default": 42,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "checkpoint_root": {
+      "default": "./checkpoints",
+      "title": "Checkpoint Root",
+      "type": "string"
+    },
+    "checkpoint_interval": {
+      "default": 0,
+      "title": "Checkpoint Interval",
+      "type": "integer"
+    },
+    "max_checkpoints": {
+      "default": 3,
+      "title": "Max Checkpoints",
+      "type": "integer"
+    },
+    "resume_from_dir": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Resume From Dir"
+    },
+    "auto_resume": {
+      "default": false,
+      "title": "Auto Resume",
+      "type": "boolean"
+    },
+    "optimizer_config": {
+      "additionalProperties": true,
+      "default": {
+        "class_name": "AdamW",
+        "lr": 2e-06
+      },
+      "properties": {
+        "class_name": {
+          "description": "torch.optim class name (e.g. AdamW).",
+          "type": "string"
+        },
+        "lr": {
+          "description": "Learning rate.",
+          "type": "number"
+        }
+      },
+      "required": [
+        "class_name"
+      ],
+      "title": "Optimizer Config",
+      "type": "object"
+    },
+    "scheduler_config": {
+      "additionalProperties": true,
+      "default": {
+        "class_name": "ConstantLR",
+        "factor": 1.0
+      },
+      "properties": {
+        "class_name": {
+          "description": "torch.optim.lr_scheduler class name (e.g. ConstantLR).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "class_name"
+      ],
+      "title": "Scheduler Config",
+      "type": "object"
+    },
+    "clip_grad_norm": {
+      "default": 1.0,
+      "title": "Clip Grad Norm",
+      "type": "number"
+    },
+    "teacher": {
+      "$ref": "#/$defs/LanguageModel"
+    },
+    "experiment_name": {
+      "default": "opdlens",
+      "title": "Experiment Name",
+      "type": "string"
+    },
+    "run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Run Id"
+    },
+    "runs_root": {
+      "default": "./runs",
+      "title": "Runs Root",
+      "type": "string"
+    },
+    "trackio_project": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Trackio Project"
+    },
+    "student": {
+      "$ref": "#/$defs/LanguageModel"
+    },
+    "rollout_backend": {
+      "default": "vllm",
+      "enum": [
+        "vllm",
+        "hf"
+      ],
+      "title": "Rollout Backend",
+      "type": "string"
+    },
+    "vllm_gpu_memory_utilization": {
+      "default": 0.3,
+      "title": "Vllm Gpu Memory Utilization",
+      "type": "number"
+    },
+    "vllm_max_model_len": {
+      "default": 2048,
+      "title": "Vllm Max Model Len",
+      "type": "integer"
+    },
+    "rollout_temperature": {
+      "default": 1.0,
+      "title": "Rollout Temperature",
+      "type": "number"
+    },
+    "rollout_top_p": {
+      "default": 1.0,
+      "title": "Rollout Top P",
+      "type": "number"
+    },
+    "rollout_max_tokens": {
+      "default": 1024,
+      "title": "Rollout Max Tokens",
+      "type": "integer"
+    },
+    "eval_benchmarks": {
+      "default": [],
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "aime": "#/$defs/AimeBenchmark",
+            "gsm8k": "#/$defs/Gsm8kBenchmark",
+            "math500": "#/$defs/Math500Benchmark",
+            "math_train": "#/$defs/MathTrainBenchmark"
+          },
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/Gsm8kBenchmark"
+          },
+          {
+            "$ref": "#/$defs/Math500Benchmark"
+          },
+          {
+            "$ref": "#/$defs/AimeBenchmark"
+          },
+          {
+            "$ref": "#/$defs/MathTrainBenchmark"
+          }
+        ]
+      },
+      "title": "Eval Benchmarks",
+      "type": "array"
+    },
+    "eval_max_samples": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": 200,
+      "title": "Eval Max Samples"
+    },
+    "train_benchmark": {
+      "discriminator": {
+        "mapping": {
+          "aime": "#/$defs/AimeBenchmark",
+          "gsm8k": "#/$defs/Gsm8kBenchmark",
+          "math500": "#/$defs/Math500Benchmark",
+          "math_train": "#/$defs/MathTrainBenchmark"
+        },
+        "propertyName": "type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Gsm8kBenchmark"
+        },
+        {
+          "$ref": "#/$defs/Math500Benchmark"
+        },
+        {
+          "$ref": "#/$defs/AimeBenchmark"
+        },
+        {
+          "$ref": "#/$defs/MathTrainBenchmark"
+        }
+      ],
+      "title": "Train Benchmark"
+    },
+    "num_prompts_per_step": {
+      "default": 8,
+      "title": "Num Prompts Per Step",
+      "type": "integer"
+    },
+    "rollouts_per_prompt": {
+      "default": 1,
+      "title": "Rollouts Per Prompt",
+      "type": "integer"
+    },
+    "arm": {
+      "discriminator": {
+        "mapping": {
+          "hidden_mse": "#/$defs/HiddenMseArm",
+          "jspace": "#/$defs/JLensArm",
+          "logit_lens": "#/$defs/LogitLensArm",
+          "logits": "#/$defs/LogitsArm"
+        },
+        "propertyName": "type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/LogitsArm"
+        },
+        {
+          "$ref": "#/$defs/LogitLensArm"
+        },
+        {
+          "$ref": "#/$defs/JLensArm"
+        },
+        {
+          "$ref": "#/$defs/HiddenMseArm"
+        }
+      ],
+      "title": "Arm"
+    },
+    "train_steps": {
+      "default": 200,
+      "title": "Train Steps",
+      "type": "integer"
+    },
+    "base_temperature": {
+      "default": 1.0,
+      "title": "Base Temperature",
+      "type": "number"
+    },
+    "kl": {
+      "default": "forward",
+      "enum": [
+        "forward",
+        "reverse"
+      ],
+      "title": "Kl",
+      "type": "string"
+    },
+    "eval_steps": {
+      "default": 50,
+      "title": "Eval Steps",
+      "type": "integer"
+    },
+    "eval_at_start": {
+      "default": true,
+      "title": "Eval At Start",
+      "type": "boolean"
+    },
+    "$schema": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "teacher",
+    "student",
+    "train_benchmark",
+    "arm"
+  ],
+  "title": "OpdTrainer",
+  "type": "object",
+  "allowTrailingCommas": true
+}
