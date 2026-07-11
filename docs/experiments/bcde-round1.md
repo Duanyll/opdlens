@@ -179,12 +179,13 @@ one GPU, eight CPUs, and 60 GiB. Pending E
 jobs 4158/4159/4162/4165 consumed no GPU and were replaced by 4167-4170 with fresh
 launch commits and the corrected dependency.
 
-An execution-path probe at 02:23 HKT found that the original batch runner passed
-the snapshot through `PYTHONPATH` while running from the shared checkout. Python's
-working-directory entry therefore shadowed the archived package code; the config
-still came from the recorded snapshot, but the code import was not immutable.
-Commit `08687af` fixes both batch runners with Python safe-path mode and adds a
-regression test.
+An exact execution-path probe found that the original `opdlens` console parent did
+import from the archived `PYTHONPATH`, but its subsequent torchrun workers started
+`-m opdlens.scripts.launch` from the shared checkout and shadowed the archive. The
+config still came from the recorded snapshot, but worker code was not immutable.
+Commit `5cd4f5c` combines a safe-path parent with inherited `PYTHONSAFEPATH=1`, and
+a real one-worker torchrun probe now resolves both `opdlens` and its CLI inside the
+archive. Regression tests pin both runner scripts.
 
 A start-time provenance audit covers all 14 retained GSM8K matrix jobs. Jobs
 4144-4147 and 4153/4154 started with the shared HEAD exactly equal to their ledger

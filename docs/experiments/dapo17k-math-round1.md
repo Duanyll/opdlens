@@ -79,22 +79,25 @@ and `checkpoint_root`. `tests/test_spine.py` validates all configs through
 `OpdTrainer` and compares the remaining spine byte-for-byte. The dataset revisions,
 full-MATH protocol, two-GPU allocation, and LoRA checkpoint policy are also pinned.
 
-The 2026-07-12 02:16 HKT config audit passed all eight spine/protocol tests, but a
-subsequent execution-path probe caught that the original runner still imported
-`opdlens` from the shared checkout because Python prepended the working directory
-ahead of `PYTHONPATH`. Jobs 4176-4185 were still dependency-blocked, had no start
-time, and had created no checkpoint roots, so they were cancelled without consuming
-GPU or producing experimental data.
+The 2026-07-12 02:16 HKT config audit passed all eight spine/protocol tests. A
+subsequent exact execution-path probe established that the original `opdlens`
+console parent imported the archived package correctly, but the torchrun workers it
+spawned imported `opdlens` from the shared checkout. Jobs 4176-4185 were still
+dependency-blocked, had no start time, and had created no checkpoint roots, so they
+were cancelled without consuming GPU or producing experimental data.
 
-Commit `08687af` launches through `python -P -m opdlens.scripts.cli`, which keeps
-the shared working directory out of the safe import path while leaving metrics and
-relative run artifacts in the repository. A real archived-commit probe resolves
-`opdlens.__file__` inside the snapshot, and regression tests pin this property for
-both batch runners. The complete suite has 27 passing tests; Ruff and Pyright pass.
+Commit `08687af` hardened the parent with `python -P -m opdlens.scripts.cli`, but a
+worker-level probe caught that this flag does not propagate through `exec` to
+torchrun. Its dependency-blocked replacements 4186/4188/4189/4191-4197 were also
+cancelled before start. Commit `5cd4f5c` additionally exports
+`PYTHONSAFEPATH=1`; an actual one-worker torchrun probe then resolves both
+`opdlens.__file__` and the CLI inside the archived commit. Regression tests pin the
+full runner environment. The complete suite has 27 passing tests; Ruff and Pyright
+pass.
 
-At 02:29 HKT, every replacement ledger commit contains `08687af`; its config blob
-is byte-identical to the checked-in config and its commit/run pair matches the Slurm
-job comment. All ten replacements are dependency-blocked on barrier 4175.
+At 02:36 HKT, every final ledger commit contains `5cd4f5c`; its config blob is
+byte-identical to the checked-in config and its commit/run pair matches the Slurm
+job comment. All ten jobs are dependency-blocked on barrier 4175.
 
 ## Launch gates
 
@@ -114,13 +117,13 @@ job comment. All ten replacements are dependency-blocked on barrier 4175.
 
 | Run | Config | Commit | Slurm job | State |
 |---|---|---|---|---|
-| `logits-full` | `examples/dapo17k_math_round1_logits_full.jsonc` | `e9a15a7` | 4186 | dependency on barrier 4175; replaces unstarted 4176 |
-| `logits-lora` | `examples/dapo17k_math_round1_logits_lora.jsonc` | `99013b8` | 4188 | dependency on barrier 4175; replaces unstarted 4177 |
-| `logitlens-full` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `0136480` | 4189 | dependency on barrier 4175; replaces unstarted 4178 |
-| `logitlens-lora` | `examples/dapo17k_math_round1_logitlens_lora.jsonc` | `697d02a` | 4191 | dependency on barrier 4175; replaces unstarted 4179 |
-| `jlens-full` | `examples/dapo17k_math_round1_jlens_full.jsonc` | `b3394ed` | 4192 | dependency on barrier 4175; replaces unstarted 4180 |
-| `jlens-lora` | `examples/dapo17k_math_round1_jlens_lora.jsonc` | `0836eb5` | 4193 | dependency on barrier 4175; replaces unstarted 4181 |
-| `hiddenmse-full` | `examples/dapo17k_math_round1_hiddenmse_full.jsonc` | `bd6c9e8` | 4194 | dependency on barrier 4175; replaces unstarted 4182 |
-| `hiddenmse-lora` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `a2199b8` | 4195 | dependency on barrier 4175; replaces unstarted 4183 |
-| `symjlens-full` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `a761b07` | 4196 | dependency on barrier 4175; replaces unstarted 4184 |
-| `symjlens-lora` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `fee04ea` | 4197 | dependency on barrier 4175; replaces unstarted 4185 |
+| `logits-full` | `examples/dapo17k_math_round1_logits_full.jsonc` | `4a37183` | 4198 | dependency on barrier 4175; replaces unstarted 4186/4176 |
+| `logits-lora` | `examples/dapo17k_math_round1_logits_lora.jsonc` | `9745def` | 4199 | dependency on barrier 4175; replaces unstarted 4188/4177 |
+| `logitlens-full` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `239a2f2` | 4200 | dependency on barrier 4175; replaces unstarted 4189/4178 |
+| `logitlens-lora` | `examples/dapo17k_math_round1_logitlens_lora.jsonc` | `6cc907d` | 4201 | dependency on barrier 4175; replaces unstarted 4191/4179 |
+| `jlens-full` | `examples/dapo17k_math_round1_jlens_full.jsonc` | `f4d09fc` | 4202 | dependency on barrier 4175; replaces unstarted 4192/4180 |
+| `jlens-lora` | `examples/dapo17k_math_round1_jlens_lora.jsonc` | `32b2396` | 4203 | dependency on barrier 4175; replaces unstarted 4193/4181 |
+| `hiddenmse-full` | `examples/dapo17k_math_round1_hiddenmse_full.jsonc` | `3ec201c` | 4204 | dependency on barrier 4175; replaces unstarted 4194/4182 |
+| `hiddenmse-lora` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `051ec10` | 4205 | dependency on barrier 4175; replaces unstarted 4195/4183 |
+| `symjlens-full` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `45d5113` | 4206 | dependency on barrier 4175; replaces unstarted 4196/4184 |
+| `symjlens-lora` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `2a45abf` | 4207 | dependency on barrier 4175; replaces unstarted 4197/4185 |
