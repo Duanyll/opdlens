@@ -10,6 +10,7 @@ model + source-layer choice::
 from __future__ import annotations
 
 import argparse
+from collections.abc import Sequence
 from typing import Any
 
 import torch
@@ -20,6 +21,33 @@ from ..models import LanguageModel
 from ..utils.logging import console, get_logger
 
 logger = get_logger(__name__)
+
+
+def _calibration_texts(
+    rows: Sequence[dict[str, Any]],
+    tokenizer: Any,
+    *,
+    prompt_key: str,
+    answer_key: str,
+    include_completion: bool,
+) -> list[str]:
+    if not include_completion:
+        return [str(row[prompt_key]) for row in rows]
+
+    texts: list[str] = []
+    for row in rows:
+        messages = [
+            {"role": "user", "content": str(row[prompt_key])},
+            {"role": "assistant", "content": str(row[answer_key])},
+        ]
+        try:
+            text = tokenizer.apply_chat_template(
+                messages, tokenize=False, enable_thinking=False
+            )
+        except TypeError:
+            text = tokenizer.apply_chat_template(messages, tokenize=False)
+        texts.append(str(text))
+    return texts
 
 
 def main() -> None:
@@ -33,6 +61,13 @@ def main() -> None:
     parser.add_argument("--hf-name", default=None)
     parser.add_argument("--split", default="train")
     parser.add_argument("--prompt-key", default="question")
+    parser.add_argument("--answer-key", default="answer")
+    parser.add_argument(
+        "--include-completion",
+        action="store_true",
+        help="Render user prompt plus gold assistant completion via the chat template.",
+    )
+    parser.add_argument("--prompt-offset", type=int, default=0)
     parser.add_argument(
         "--source-layers",
         required=True,
@@ -56,14 +91,25 @@ def main() -> None:
 
     lens_model: Any = from_hf(lm.model, lm.tokenizer)
     if args.prompts:
-        rows = read_jsonl(args.prompts)[: args.n_prompts]
+        all_rows = read_jsonl(args.prompts)
     else:
-        rows = list(read_hf(args.hf_id, args.split, name=args.hf_name))[
-            : args.n_prompts
-        ]
-    prompts = [str(row[args.prompt_key]) for row in rows]
+        all_rows = list(read_hf(args.hf_id, args.split, name=args.hf_name))
+    rows = all_rows[args.prompt_offset : args.prompt_offset + args.n_prompts]
+    prompts = _calibration_texts(
+        rows,
+        lm.tokenizer,
+        prompt_key=args.prompt_key,
+        answer_key=args.answer_key,
+        include_completion=args.include_completion,
+    )
     source_layers = [int(x) for x in args.source_layers.split(",")]
-    logger.info("Fitting lens over %d prompts, layers %s", len(prompts), source_layers)
+    logger.info(
+        "Fitting lens over %d prompts (offset=%d, completion=%s), layers %s",
+        len(prompts),
+        args.prompt_offset,
+        args.include_completion,
+        source_layers,
+    )
 
     lens = fit(
         lens_model,

@@ -46,7 +46,7 @@ def arm_config(arm: str, aux_weight: float) -> tuple[str, dict[str, Any]]:
                 **shared,
                 "temperature": 1.0,
                 "student_jacobian_path": (
-                    f"{OPDLENS_ROOT}/artifacts/qwen3p5-2b-jlens.pt"
+                    f"{OPDLENS_ROOT}/artifacts/qwen3p5-2b-jlens-cot.pt"
                 ),
                 "teacher_jacobian_path": (f"{ARTIFACT_ROOT}/qwen3p5_9b_v2/lens.pt"),
             },

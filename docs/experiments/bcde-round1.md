@@ -30,7 +30,8 @@ The reference curves are `logits-full`: 0.7491 / 0.8165 / 0.8332 / 0.8256 and
 |---|---|---|
 | `/gdata/users/duanyll/jlens/qwen3p5_9b_v2/lens.pt` | teacher Jacobian, 264 prompts | ready |
 | `/gdata/users/duanyll/jlens/qwen3p5_bridge/bridge.pt` | per-layer 9B->2B bridge | ready |
-| `/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens.pt` | student Jacobian, 264 prompts | ready; job 4127 (`dc31e3c`) |
+| `/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens.pt` | student Jacobian, raw questions | superseded; calibration mismatch |
+| `/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens-cot.pt` | student Jacobian, 264 question+gold-CoT chats | pending two-GPU sharded refit |
 
 ## Run ledger
 
@@ -46,8 +47,8 @@ The same commit is also stored in the Slurm job comment.
 | `jlens-lora-aux0.01` | `examples/gsm8k_round1_jlens_lora_aux0p01.jsonc` | `9755e55` | 4147 | running |
 | `hiddenmse-full` | `examples/gsm8k_round1_hiddenmse_full.jsonc` | `ec0743a` | 4140 | running |
 | `hiddenmse-lora` | `examples/gsm8k_round1_hiddenmse_lora.jsonc` | `bba97df` | 4141 | running |
-| `symjlens-full-aux0.01` | `examples/gsm8k_round1_symjlens_full_aux0p01.jsonc` | `a34ac88` | 4148 | queued |
-| `symjlens-lora-aux0.01` | `examples/gsm8k_round1_symjlens_lora_aux0p01.jsonc` | `767d06b` | 4149 | queued |
+| `symjlens-full-aux0.01` | `examples/gsm8k_round1_symjlens_full_aux0p01.jsonc` | pending | pending | waiting on completion-aware student lens |
+| `symjlens-lora-aux0.01` | `examples/gsm8k_round1_symjlens_lora_aux0p01.jsonc` | pending | pending | waiting on completion-aware student lens |
 
 ## Monitoring
 
@@ -71,3 +72,9 @@ the previously exercised jlens CoT weight 0.01 and a distinct `-aux0.01` run nam
 the failed pilots remain in Trackio as diagnostic evidence. D remains at 0.1
 because its initial weighted contribution was only about 0.0025 and its curve is
 healthy.
+
+The first student lens fit used raw GSM8K questions, whereas the existing v2
+teacher lens was calibrated on chat-formatted questions plus gold CoT completions.
+Jobs 4148/4149 had not started and were cancelled. The replacement student lens
+uses the same completion-aware distribution, split across two GPUs and merged;
+E will only launch after that artifact succeeds.
