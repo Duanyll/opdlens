@@ -34,9 +34,9 @@ profile is an additional experiment, never an in-place replacement.
 |---|---|---|---|---|
 | `current-vocab-compat` | 4144-4147 (B/C) | JSD beta 0.5, base T=0.9; rollout T=0.9, top-p 1, max 768, thinking off; full GSM8K fixed-step eval | full LR 2e-5 / LoRA LR 5e-5; AdamW wd 0.1; 30-step warmup + cosine; global batch 96 | B/C weight 0.01; 512 cap sampled independently per layer, matching pre-knob opdlens behavior |
 | `current-hidden-shared` | 4153/4154 (D) | same current spine | same current optimizer/batch | D weight 1.94; one shared 512-token subset across layers; bridge and MSE in fp32 |
-| `current-sym-shared` | 4158/4159 (E) | same current spine | same current optimizer/batch | E weight 0.01; one shared 512-token subset; completion-matched teacher/student Jacobian lenses |
-| `legacy-bce-full` | 4160-4162 (B/C/E) | current prompt/grader and fixed-step reporting retained; forward-KL base T=1; rollout T=1, top-p 1, max 512 | historical full LR 2e-6, AdamW wd 0, constant LR, global batch 8 | B/C/E weight 0.01 and shared 512-token subset; this imports old numerical settings without reviving the old 200-question proxy eval |
-| `legacy-bce-lora-hybrid` | 4163-4165 (B/C/E) | same as `legacy-bce-full` | no historical LoRA setting exists, so LoRA LR 5e-5 and adapter definition remain from the validated current baseline; global batch 8 | otherwise identical to `legacy-bce-full`; explicitly a hybrid, not claimed as an exact old reproduction |
+| `current-sym-shared` | 4167/4168 (E) | same current spine | same current optimizer/batch | E weight 0.01; one shared 512-token subset; completion-matched teacher/student Jacobian lenses |
+| `legacy-bce-full` | 4160/4161/4169 (B/C/E) | current prompt/grader and fixed-step reporting retained; forward-KL base T=1; rollout T=1, top-p 1, max 512 | historical full LR 2e-6, AdamW wd 0, constant LR, global batch 8 | B/C/E weight 0.01 and shared 512-token subset; this imports old numerical settings without reviving the old 200-question proxy eval |
+| `legacy-bce-lora-hybrid` | 4171/4172/4170 (B/C/E) | same as `legacy-bce-full` | no historical LoRA setting exists, so LoRA LR 5e-5 and adapter definition remain from the validated current baseline; global batch 8 | otherwise identical to `legacy-bce-full`; explicitly a hybrid, not claimed as an exact old reproduction |
 
 `aux_token_policy` defaults to `compat`, and D's `mse_dtype` defaults to `input`.
 Thus configs written before these knobs retain the behavior they had before commit
@@ -87,14 +87,14 @@ The same commit is also stored in the Slurm job comment.
 | `jlens-lora-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_jlens_lora_aux0p01.jsonc` | `9755e55` | 4147 | complete; step-300 acc 0.7604 |
 | `hiddenmse-full-aux1.94` | `current-hidden-shared` | `examples/gsm8k_round1_hiddenmse_full_aux1p94.jsonc` | `f3d3ff9` | 4153 | complete; step-300 acc 0.8052; replaces underweighted 4140 |
 | `hiddenmse-lora-aux1.94` | `current-hidden-shared` | `examples/gsm8k_round1_hiddenmse_lora_aux1p94.jsonc` | `d6fceee` | 4154 | complete; step-300 acc 0.7718; replaces underweighted 4141 |
-| `symjlens-full-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_full_aux0p01.jsonc` | `4476408` | 4167 | stable; step-50 acc 0.7900; replaces 4158 |
-| `symjlens-lora-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_lora_aux0p01.jsonc` | `ce66f87` | 4168 | stable first updates, running; replaces 4159 |
+| `symjlens-full-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_full_aux0p01.jsonc` | `4476408` | 4167 | stable, running; step-150 acc 0.8036; replaces 4158 |
+| `symjlens-lora-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_lora_aux0p01.jsonc` | `ce66f87` | 4168 | stable, running; step-100 acc 0.7976; replaces 4159 |
 | `logitlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_logitlens_full_legacy.jsonc` | `c17ca55` | 4160 | complete; step-300 acc 0.7801 |
 | `jlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_jlens_full_legacy.jsonc` | `80b92c0` | 4161 | complete; step-300 acc 0.7733 |
-| `symjlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_symjlens_full_legacy.jsonc` | `810ab6f` | 4169 | stable; step-200 acc 0.7930; replaces 4162 |
+| `symjlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_symjlens_full_legacy.jsonc` | `810ab6f` | 4169 | complete; step-300 acc 0.8014; replaces 4162 |
 | `logitlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_logitlens_lora_legacy.jsonc` | `3c32077` | 4171 | complete; step-300 acc 0.7847; replaces pending 4163 |
 | `jlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_jlens_lora_legacy.jsonc` | `fed3cb2` | 4172 | complete; step-300 acc 0.7885; replaces pending 4164 |
-| `symjlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_symjlens_lora_legacy.jsonc` | `db69357` | 4170 | stable; step-150 acc 0.7680; replaces 4165 |
+| `symjlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_symjlens_lora_legacy.jsonc` | `db69357` | 4170 | complete; step-300 acc 0.7877; replaces 4165 |
 
 ## Monitoring
 
@@ -112,6 +112,12 @@ At 01:27 HKT, jobs 4167-4172 again occupied all 12 usable A800s. Five-minute
 averages over their allocated devices were 49-99% utilization and 198-331 W;
 the four unallocated GPUs on node 2 remained near 60 W. There was no allocated
 idle card, and every freed two-GPU slot had immediately admitted the next job.
+
+At 02:10 HKT, only current E jobs 4167/4168 remained from GSM8K. Their allocated
+devices (node 2 GPUs 0-1 and node 1 GPUs 4-5) averaged 46-79% utilization,
+207-288 W, and 71-76 GiB allocated memory over five minutes. Both jobs continued
+to advance with finite metrics; the DAPO17K/MATH matrix remained queued behind
+their all-successful GSM8K dependency gate.
 
 ## Launch incidents
 
@@ -176,12 +182,19 @@ launch commits and the corrected dependency.
 Current E-full job 4167 loads the merged artifact successfully. Its first update is
 finite: base 0.03733, raw auxiliary 4.8195, weighted auxiliary/base ratio 1.29x,
 and gradient norm 0.8477. This lies between the stable B/C scale rather than the
-failed 0.1-pilot regime; its step-50 accuracy is 0.7900, up from 0.7475.
+failed 0.1-pilot regime. Its fixed-step curve is 0.7475/0.7900/0.8059/0.8036 at
+steps 0/50/100/150. At training step 164, base 0.02283, raw auxiliary 1.3870,
+total loss 0.03670, and gradient norm 0.3164 are all finite.
 E-LoRA job 4168 is likewise finite: at step 11 its base is 0.03511, raw auxiliary
-4.8686, weighted auxiliary/base ratio 1.39x, and gradient norm 0.0676. Under the
-legacy full profile, E reaches 0.7817/0.7885/0.7900/0.7930 at steps
-50/100/150/200 from the common 0.7475 start; legacy E-LoRA reaches
-0.7574/0.7559/0.7680 at steps 50/100/150.
+4.8686, weighted auxiliary/base ratio 1.39x, and gradient norm 0.0676. Its
+fixed-step curve is 0.7475/0.7741/0.7976 at steps 0/50/100; step 131 remains
+finite with base 0.03281, raw auxiliary 2.2225, total loss 0.05503, and gradient
+norm 0.0841.
+
+Both legacy E jobs completed successfully. Legacy E-full reaches
+0.7475/0.7817/0.7885/0.7900/0.7930/0.7892/0.8014 at steps
+0/50/100/150/200/250/300. Legacy E-LoRA reaches
+0.7475/0.7574/0.7559/0.7680/0.7741/0.7892/0.7877 at the same fixed steps.
 
 ## Archaeological setting audit
 
