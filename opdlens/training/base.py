@@ -60,8 +60,10 @@ class BaseTrainer(BaseModel):
 
     @property
     def device(self) -> torch.device:
+        # Each rank restricts CUDA_VISIBLE_DEVICES to its own GPU (see init_distributed),
+        # so the local GPU is always cuda:0.
         if torch.cuda.is_available():
-            return torch.device("cuda", self._local_rank)
+            return torch.device("cuda", 0)
         return torch.device("cpu")
 
     # ------------------------------- Lifecycle -------------------------------- #
@@ -70,9 +72,23 @@ class BaseTrainer(BaseModel):
         self._world_size = int(os.environ.get("WORLD_SIZE", "1"))
         self._rank = int(os.environ.get("RANK", "0"))
         self._local_rank = int(os.environ.get("LOCAL_RANK", "0"))
+        # Pin this rank to ONE visible GPU (exposed as cuda:0) BEFORE any CUDA init. The
+        # colocated vLLM uniproc engine always binds cuda:0 regardless of env or current
+        # device, so per-rank CUDA_VISIBLE_DEVICES is the only way to place N engines on
+        # N GPUs; all downstream code then treats cuda:0 as this rank's GPU.
+        visible = os.environ.get("CUDA_VISIBLE_DEVICES")
+        gpu_ids = visible.split(",") if visible else [str(self._local_rank)]
+        os.environ["CUDA_VISIBLE_DEVICES"] = gpu_ids[
+            min(self._local_rank, len(gpu_ids) - 1)
+        ]
         if torch.cuda.is_available():
-            torch.cuda.set_device(self._local_rank)
+            torch.cuda.set_device(0)
         if self._world_size > 1:
+            # torchrun exports MASTER_ADDR as the node FQDN, which is unreachable
+            # across the enroot/pyxis container's net namespace and hangs the NCCL
+            # rendezvous. opdlens always launches single-node (torchrun --standalone),
+            # so loopback is the correct — and reachable — rendezvous address.
+            os.environ["MASTER_ADDR"] = "127.0.0.1"
             backend = "nccl" if torch.cuda.is_available() else "gloo"
             dist.init_process_group(backend=backend)
         logger.info(

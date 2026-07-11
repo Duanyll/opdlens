@@ -12,11 +12,12 @@ from __future__ import annotations
 
 from typing import Any
 
+import torch
 from pydantic import ConfigDict, PrivateAttr
 from rich.progress import Progress
 
 from ..arms import Arm
-from ..losses import KLDir, opd_base_loss
+from ..losses import opd_base_loss
 from ..types import CaptureSpec
 from ..utils.logging import console, get_logger
 from .base import distributed_main
@@ -37,7 +38,8 @@ class OpdTrainer(RolloutMixin, EvalMixin, TeacherMixin, OptimMixin, Checkpointin
     arm: Arm
     train_steps: int = 200
     base_temperature: float = 1.0
-    kl: KLDir = "forward"
+    base_beta: float = 0.0
+    """Base-loss divergence: 0=forward KL (default), 0.5=JSD (ms-swift GKD), 1=reverse."""
     eval_steps: int = 50
     eval_at_start: bool = True
 
@@ -58,8 +60,11 @@ class OpdTrainer(RolloutMixin, EvalMixin, TeacherMixin, OptimMixin, Checkpointin
             return
 
         self.student.model.train()
-        base_sum = 0.0
-        aux_sum = 0.0
+        # Accumulate the logging scalars on-device and read them back ONCE after the
+        # step. Per-batch ``float(...)`` would force a GPU->CPU sync every micro-batch,
+        # serializing the 96-way grad-accumulation loop and starving the GPU.
+        base_sum = torch.zeros((), device=self.device)
+        aux_sum = torch.zeros((), device=self.device)
         for batch in batches:
             student_out = self.student.forward_capture(
                 batch.input_ids, layers=spec.student_layers, need_logits=True
@@ -71,7 +76,7 @@ class OpdTrainer(RolloutMixin, EvalMixin, TeacherMixin, OptimMixin, Checkpointin
                 teacher_out.logits,
                 batch.loss_mask,
                 temperature=self.base_temperature,
-                kl=self.kl,
+                beta=self.base_beta,
             )
             if active_aux:
                 aux, _ = self.arm.aux_loss(
@@ -83,11 +88,11 @@ class OpdTrainer(RolloutMixin, EvalMixin, TeacherMixin, OptimMixin, Checkpointin
                     unembed_t=self.teacher.unembed,
                 )
                 loss = base + self.arm.aux_weight * aux
-                aux_sum += float(aux)
+                aux_sum = aux_sum + aux.detach()
             else:
                 loss = base
             (loss / len(batches)).backward()
-            base_sum += float(base)
+            base_sum = base_sum + base.detach()
 
         grad_norm = self.optimizer_step()
         self._current_step += 1

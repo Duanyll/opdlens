@@ -10,6 +10,7 @@ next-token shift.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable
 from typing import Literal
 
@@ -57,6 +58,36 @@ def _directed_kl(
     return _token_kl(student_logits, teacher_logits, temperature)  # reverse
 
 
+def _generalized_jsd(
+    teacher_logits: torch.Tensor,
+    student_logits: torch.Tensor,
+    temperature: float,
+    beta: float,
+) -> torch.Tensor:
+    """Per-position generalized Jensen-Shannon divergence (ms-swift / TRL GKD).
+
+    ``beta`` interpolates the divergence, matching ms-swift's single ``--beta`` knob:
+    ``0`` → forward ``KL(P_teacher ‖ P_student)`` (mode-covering distillation),
+    ``1`` → reverse ``KL(P_student ‖ P_teacher)``, and ``0<beta<1`` → JSD with mixture
+    ``M = beta·P_teacher + (1-beta)·P_student`` and loss
+    ``beta·KL(P_T ‖ M) + (1-beta)·KL(P_S ‖ M)`` (``beta=0.5`` is the symmetric JSD).
+    Temperature scales both logits (no ``T²`` factor, as in ms-swift). Returns ``[T]``.
+    """
+    t, s = _slice_common_vocab(teacher_logits, student_logits)
+    t_logp = F.log_softmax(t.float() / temperature, dim=-1)
+    s_logp = F.log_softmax(s.float() / temperature, dim=-1)
+    if beta == 0.0:
+        return (t_logp.exp() * (t_logp - s_logp)).sum(dim=-1)  # KL(P_T ‖ P_S)
+    if beta == 1.0:
+        return (s_logp.exp() * (s_logp - t_logp)).sum(dim=-1)  # KL(P_S ‖ P_T)
+    m_logp = torch.logsumexp(
+        torch.stack([t_logp + math.log(beta), s_logp + math.log1p(-beta)]), dim=0
+    )
+    kl_t = (t_logp.exp() * (t_logp - m_logp)).sum(dim=-1)  # KL(P_T ‖ M)
+    kl_s = (s_logp.exp() * (s_logp - m_logp)).sum(dim=-1)  # KL(P_S ‖ M)
+    return beta * kl_t + (1.0 - beta) * kl_s
+
+
 def _masked_mean(values: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
     m = mask.to(values.dtype)
     return (values * m).sum() / m.sum().clamp_min(1.0)
@@ -68,14 +99,21 @@ def opd_base_loss(
     loss_mask: torch.Tensor,
     *,
     temperature: float = 1.0,
-    kl: KLDir = "forward",
+    beta: float = 0.0,
 ) -> torch.Tensor:
-    """Plain OPD (arm A): masked-mean per-token KL on final logits.
+    """Plain OPD (arm A): masked-mean per-token divergence on final logits.
 
     ``student_logits``/``teacher_logits`` are ``[T, V]`` (vocab may differ; sliced
-    to the common size); ``loss_mask`` is ``[T]``.
+    to the common size); ``loss_mask`` is ``[T]``. ``beta`` selects the divergence
+    (``0`` forward KL — the default and the README's "final-logit KL"; ``0.5`` the
+    JSD ms-swift GKD reports; ``1`` reverse KL), reduced as a per-token masked mean.
+
+    Reduction stays a fully static ``masked_mean`` (no ``nonzero``/boolean gather) so
+    the hot path launches zero data-dependent GPU→CPU syncs; sequence length is bounded
+    by ``rollout_max_tokens`` instead, which is what keeps the ``[T, V]`` (V≈151k) fp32
+    divergence within memory.
     """
-    per_pos = _directed_kl(teacher_logits, student_logits, temperature, kl)
+    per_pos = _generalized_jsd(teacher_logits, student_logits, temperature, beta)
     return _masked_mean(per_pos, loss_mask)
 
 

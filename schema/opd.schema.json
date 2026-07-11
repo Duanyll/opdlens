@@ -84,6 +84,23 @@
           "default": "Solve the following problem step by step. Put your final answer within \\boxed{}.",
           "title": "System Prompt"
         },
+        "answer_instruction": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Answer Instruction"
+        },
+        "few_shot_num": {
+          "default": 0,
+          "title": "Few Shot Num",
+          "type": "integer"
+        },
         "eval_temperature": {
           "default": 0.6,
           "title": "Eval Temperature",
@@ -196,6 +213,23 @@
           ],
           "default": "Solve the following problem step by step. Put your final answer within \\boxed{}.",
           "title": "System Prompt"
+        },
+        "answer_instruction": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Answer Instruction"
+        },
+        "few_shot_num": {
+          "default": 0,
+          "title": "Few Shot Num",
+          "type": "integer"
         },
         "eval_temperature": {
           "default": 0.6,
@@ -354,6 +388,17 @@
           "default": true,
           "title": "Trust Remote Code",
           "type": "boolean"
+        },
+        "lora": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LoraSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -494,6 +539,44 @@
       "title": "LogitsArm",
       "type": "object"
     },
+    "LoraSpec": {
+      "additionalProperties": false,
+      "description": "LoRA adapter config for the student. When set, only the adapter trains; the\nbase model is frozen. Defaults mirror ms-swift's GKD LoRA recipe (rank 8, alpha\n32, all-linear). The colocated vLLM engine is synced with MERGED weights, so the\nreproduction stays a drop-in swap of ``full`` fine-tune for ``lora`` regularized.",
+      "properties": {
+        "r": {
+          "default": 8,
+          "title": "R",
+          "type": "integer"
+        },
+        "alpha": {
+          "default": 32,
+          "title": "Alpha",
+          "type": "integer"
+        },
+        "dropout": {
+          "default": 0.05,
+          "title": "Dropout",
+          "type": "number"
+        },
+        "target_modules": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          ],
+          "default": "all-linear",
+          "title": "Target Modules"
+        }
+      },
+      "title": "LoraSpec",
+      "type": "object"
+    },
     "Math500Benchmark": {
       "additionalProperties": false,
       "properties": {
@@ -577,6 +660,23 @@
           ],
           "default": "Solve the following problem step by step. Put your final answer within \\boxed{}.",
           "title": "System Prompt"
+        },
+        "answer_instruction": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Answer Instruction"
+        },
+        "few_shot_num": {
+          "default": 0,
+          "title": "Few Shot Num",
+          "type": "integer"
         },
         "eval_temperature": {
           "default": 0.6,
@@ -685,6 +785,23 @@
           ],
           "default": "Solve the following problem step by step. Put your final answer within \\boxed{}.",
           "title": "System Prompt"
+        },
+        "answer_instruction": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Answer Instruction"
+        },
+        "few_shot_num": {
+          "default": 0,
+          "title": "Few Shot Num",
+          "type": "integer"
         },
         "eval_temperature": {
           "default": 0.6,
@@ -872,6 +989,18 @@
       "title": "Rollout Max Tokens",
       "type": "integer"
     },
+    "enable_thinking": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Enable Thinking"
+    },
     "eval_benchmarks": {
       "default": [],
       "items": {
@@ -940,6 +1069,18 @@
       ],
       "title": "Train Benchmark"
     },
+    "global_batch_size": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Global Batch Size"
+    },
     "num_prompts_per_step": {
       "default": 8,
       "title": "Num Prompts Per Step",
@@ -986,14 +1127,10 @@
       "title": "Base Temperature",
       "type": "number"
     },
-    "kl": {
-      "default": "forward",
-      "enum": [
-        "forward",
-        "reverse"
-      ],
-      "title": "Kl",
-      "type": "string"
+    "base_beta": {
+      "default": 0.0,
+      "title": "Base Beta",
+      "type": "number"
     },
     "eval_steps": {
       "default": 50,

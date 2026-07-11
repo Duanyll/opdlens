@@ -31,6 +31,27 @@ logger = get_logger(__name__)
 
 _VLLM_DTYPE = {"bf16": "bfloat16", "fp16": "float16", "fp32": "float32"}
 
+# torchrun exports these; the colocated vLLM V1 engine otherwise tries to bootstrap
+# its own distributed init through torchrun's rendezvous (MASTER_ADDR/RANK/WORLD_SIZE)
+# and hangs inside the container. They are cleared only around engine construction.
+_TORCHRUN_DIST_ENV = (
+    "RANK",
+    "WORLD_SIZE",
+    "LOCAL_RANK",
+    "LOCAL_WORLD_SIZE",
+    "GROUP_RANK",
+    "ROLE_RANK",
+    "ROLE_NAME",
+    "ROLE_WORLD_SIZE",
+    "MASTER_ADDR",
+    "MASTER_PORT",
+    "TORCHELASTIC_RUN_ID",
+    "TORCHELASTIC_RESTART_COUNT",
+    "TORCHELASTIC_MAX_RESTARTS",
+    "TORCHELASTIC_USE_AGENT_STORE",
+    "TORCHELASTIC_ERROR_FILE",
+)
+
 
 class GenerationMixin(BaseTrainer):
     student: LanguageModel
@@ -45,6 +66,12 @@ class GenerationMixin(BaseTrainer):
     rollout_top_p: float = 1.0
     rollout_max_tokens: int = 1024
 
+    # Chat-template control, applied identically to rollout AND eval so the two never
+    # diverge. ``enable_thinking=False`` disables Qwen3.5's hybrid-thinking block (the
+    # ms-swift GKD recipe runs with thinking off); ``None`` leaves the template default
+    # (for models with no thinking toggle).
+    enable_thinking: bool | None = None
+
     _llm: Any = None
 
     # ------------------------------- Lifecycle -------------------------------- #
@@ -56,32 +83,46 @@ class GenerationMixin(BaseTrainer):
         if self.rollout_backend != "vllm":
             return
         os.environ.setdefault("VLLM_ENABLE_V1_MULTIPROCESSING", "0")
+        # Colocated vLLM initializes its own (single-process, TP=1) torch.distributed
+        # group. Inside the enroot/pyxis container the node's LAN IP is unreachable
+        # across the net namespace, so vLLM's default ``get_ip()`` store hangs until
+        # a 600 s TCPStore timeout. Pin the store to loopback — each rank's engine is
+        # independent and single-node, so 127.0.0.1 is always correct here.
+        os.environ.setdefault("VLLM_HOST_IP", "127.0.0.1")
         from vllm import LLM
 
         vllm_dtype: Any = _VLLM_DTYPE[self.student.dtype]
-        self._llm = LLM(
-            model=self.student.model_id,
-            dtype=vllm_dtype,
-            gpu_memory_utilization=self.vllm_gpu_memory_utilization,
-            max_model_len=self.vllm_max_model_len,
-            enforce_eager=True,
-            trust_remote_code=self.student.trust_remote_code,
-        )
+        # Each rank's colocated engine is an independent single-process TP=1 engine on
+        # the already-selected local device; it must form its OWN group, so clear the
+        # torchrun rendezvous env during construction. The trainer's process group was
+        # created earlier and persists as a live object, so restoring the env afterward
+        # keeps the trainer's own collectives working.
+        saved_env = {
+            k: os.environ.pop(k) for k in _TORCHRUN_DIST_ENV if k in os.environ
+        }
+        try:
+            self._llm = LLM(
+                model=self.student.model_id,
+                dtype=vllm_dtype,
+                gpu_memory_utilization=self.vllm_gpu_memory_utilization,
+                max_model_len=self.vllm_max_model_len,
+                enforce_eager=True,
+                trust_remote_code=self.student.trust_remote_code,
+            )
+        finally:
+            os.environ.update(saved_env)
         logger.info("Colocated vLLM engine initialized.")
 
     def sync_weights(self) -> None:
         """Stream current student weights into the colocated vLLM engine.
 
-        DDP params are plain tensors; FSDP2 params are ``DTensor`` and get
-        all-gathered per-parameter via ``full_tensor()``. vLLM's ``load_weights``
-        fuses qkv / gate_up and reshards to its own TP layout internally.
+        Name mapping (archs whose HF and vLLM weight names disagree, e.g. Qwen3.5) and
+        FSDP2 ``full_tensor()`` gathering are handled by ``LanguageModel.iter_vllm_weights``.
+        vLLM's ``load_weights`` fuses qkv / gate_up and reshards to its TP layout.
         """
         if self.rollout_backend != "vllm" or self._llm is None:
             return
-        weights = (
-            (name, param.full_tensor() if hasattr(param, "full_tensor") else param)
-            for name, param in self.student.model.state_dict().items()
-        )
+        weights = self.student.iter_vllm_weights()
         self._llm.apply_model(lambda m: m.load_weights(weights))
 
     # ------------------------------- Encoding --------------------------------- #
@@ -90,8 +131,14 @@ class GenerationMixin(BaseTrainer):
         # Render to text then tokenize explicitly (apply_chat_template's tokenize=True
         # return type varies; this always yields a clean list[int]). The template
         # already adds special tokens, so add_special_tokens=False.
+        template_kwargs: dict[str, Any] = {}
+        if self.enable_thinking is not None:
+            template_kwargs["enable_thinking"] = self.enable_thinking
         text = self.student.tokenizer.apply_chat_template(
-            benchmark.build_prompt(example), add_generation_prompt=True, tokenize=False
+            benchmark.build_prompt(example),
+            add_generation_prompt=True,
+            tokenize=False,
+            **template_kwargs,
         )
         encoded = self.student.tokenizer(text, add_special_tokens=False)
         return list(encoded["input_ids"])

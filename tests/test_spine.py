@@ -67,3 +67,35 @@ def test_base_loss_is_the_single_shared_invariant():
     assert torch.equal(
         opd_base_loss(student, teacher, mask), opd_base_loss(student, teacher, mask)
     )
+
+
+def test_base_beta_selects_divergence():
+    """base_beta reproduces ms-swift GKD's single divergence knob: 0=forward KL,
+    1=reverse KL, 0.5=symmetric JSD. Pins the exact math against hand computation."""
+    import torch.nn.functional as F
+
+    torch.manual_seed(1)
+    seq, vocab = 8, 40
+    student = torch.randn(seq, vocab)
+    teacher = torch.randn(seq, vocab)
+    mask = torch.ones(seq, dtype=torch.bool)
+    slp = F.log_softmax(student.float(), dim=-1)
+    tlp = F.log_softmax(teacher.float(), dim=-1)
+
+    # beta=0 -> forward KL(P_teacher || P_student) == the default base loss.
+    fwd = opd_base_loss(student, teacher, mask, beta=0.0)
+    assert torch.allclose(fwd, (tlp.exp() * (tlp - slp)).sum(-1).mean(), atol=1e-5)
+    assert torch.allclose(fwd, opd_base_loss(student, teacher, mask), atol=1e-6)
+
+    # beta=1 -> reverse KL(P_student || P_teacher).
+    rev = opd_base_loss(student, teacher, mask, beta=1.0)
+    assert torch.allclose(rev, (slp.exp() * (slp - tlp)).sum(-1).mean(), atol=1e-5)
+
+    # beta=0.5 -> symmetric, non-negative, zero on identical distributions.
+    jsd = opd_base_loss(student, teacher, mask, beta=0.5)
+    jsd_swapped = opd_base_loss(teacher, student, mask, beta=0.5)
+    assert torch.allclose(jsd, jsd_swapped, atol=1e-6)
+    assert float(jsd) > 0.0
+    assert torch.allclose(
+        opd_base_loss(teacher, teacher, mask, beta=0.5), torch.zeros(()), atol=1e-5
+    )

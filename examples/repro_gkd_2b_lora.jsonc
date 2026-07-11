@@ -1,0 +1,70 @@
+{
+  // LoRA variant of the ms-swift GKD reproduction (Qwen3.5-9B -> 2B, GSM8K). Identical
+  // to repro_gkd_2b_full.jsonc EXCEPT the student's `lora` block and the LoRA lr (5e-5,
+  // ms-swift's documented value). LoRA acts as a regularizer — a full-vs-LoRA curve
+  // difference is expected and is the point of running both.
+  "$schema": "../schema/opd.schema.json",
+  "launch": { "type": "opd", "devices": 1, "env": { "HF_HUB_OFFLINE": "1" } },
+  "experiment_name": "repro-gkd-2b-lora",
+  "trackio_project": "opdlens-repro-gkd",
+  "seed": 42,
+
+  "student": {
+    "model_id": "Qwen/Qwen3.5-2B",
+    "dtype": "bf16",
+    "attn_impl": "sdpa",
+    "lora": { "r": 8, "alpha": 32, "dropout": 0.05, "target_modules": "all-linear" }
+  },
+  "teacher": { "model_id": "Qwen/Qwen3.5-9B", "dtype": "bf16", "attn_impl": "sdpa" },
+
+  "arm": { "type": "logits" },
+  "base_beta": 0.5,
+  "base_temperature": 0.9,
+  "enable_thinking": false,
+
+  "train_benchmark": { "type": "gsm8k", "split": "train", "system_prompt": null },
+  "eval_benchmarks": [
+    {
+      "type": "gsm8k",
+      "split": "test",
+      "system_prompt": null,
+      "few_shot_num": 4,
+      "answer_instruction": "Please reason step by step, and put your final answer within \\boxed{}.",
+      "eval_temperature": 0.0,
+      "eval_top_p": 1.0,
+      "avg_k": 1,
+      "eval_max_tokens": 2048
+    }
+  ],
+  "eval_max_samples": null,
+
+  "rollout_backend": "vllm",
+  "rollout_temperature": 0.9,
+  "rollout_top_p": 1.0,
+  "rollout_max_tokens": 768,
+  "vllm_gpu_memory_utilization": 0.25,
+  "vllm_max_model_len": 4096,
+
+  "global_batch_size": 96,
+  "rollouts_per_prompt": 1,
+
+  "train_steps": 300,
+  "eval_steps": 100,
+  "eval_at_start": true,
+  "checkpoint_interval": 100,
+  "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/repro-gkd-2b-lora",
+
+  // ms-swift's documented LoRA lr (5e-5). betas/wd/warmup match the GKD recipe.
+  "optimizer_config": {
+    "class_name": "AdamW",
+    "lr": 5e-5,
+    "betas": [0.9, 0.95],
+    "weight_decay": 0.1
+  },
+  "scheduler_config": {
+    "class_name": "get_cosine_schedule_with_warmup",
+    "num_warmup_steps": 30,
+    "num_training_steps": 300
+  },
+  "clip_grad_norm": 1.0
+}

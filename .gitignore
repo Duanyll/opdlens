@@ -18,6 +18,7 @@ wandb/
 local/
 draft/
 data/
+scratch/
 
 # OS / editor
 .DS_Store

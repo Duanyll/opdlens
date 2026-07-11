@@ -23,6 +23,11 @@ logger = get_logger(__name__)
 
 class RolloutMixin(GenerationMixin):
     train_benchmark: Benchmark
+    global_batch_size: int | None = None
+    """Total sequences per optimizer step across ALL ranks. When set, the per-rank
+    prompt count is derived as ``global_batch_size / (world_size * rollouts_per_prompt)``
+    so that changing ONLY the GPU count leaves the global batch — and thus the training
+    dynamics — unchanged. When None, ``num_prompts_per_step`` (per-rank) is used as-is."""
     num_prompts_per_step: int = 8
     rollouts_per_prompt: int = 1
 
@@ -30,13 +35,36 @@ class RolloutMixin(GenerationMixin):
     _deck: list[int] = PrivateAttr(default_factory=list)
     _cursor: int = PrivateAttr(default=0)
     _rng: Any = PrivateAttr(default=None)
+    _prompts_per_rank: int = PrivateAttr(default=0)
+
+    def prompts_per_rank(self) -> int:
+        """Per-rank prompt count, derived from ``global_batch_size`` when set."""
+        if self.global_batch_size is None:
+            return self.num_prompts_per_step
+        denom = self.world_size * self.rollouts_per_prompt
+        if self.global_batch_size % denom != 0:
+            raise ValueError(
+                f"global_batch_size={self.global_batch_size} must be divisible by "
+                f"world_size*rollouts_per_prompt={denom} to keep the global batch "
+                "constant across GPU counts."
+            )
+        return self.global_batch_size // denom
 
     def load_rollout_data(self) -> None:
         self._train_examples = self.train_benchmark.iter_examples("train")
         self._rng = random.Random(self.seed + self.rank)
         self._deck = []
         self._cursor = 0
-        logger.info("Loaded %d train examples for rollout.", len(self._train_examples))
+        self._prompts_per_rank = self.prompts_per_rank()
+        logger.info(
+            "Loaded %d train examples; %d prompts/rank x %d rollouts x %d ranks = "
+            "%d global batch.",
+            len(self._train_examples),
+            self._prompts_per_rank,
+            self.rollouts_per_prompt,
+            self.world_size,
+            self._prompts_per_rank * self.rollouts_per_prompt * self.world_size,
+        )
 
     def _draw(self, n: int) -> list[Example]:
         drawn: list[Example] = []
@@ -50,7 +78,7 @@ class RolloutMixin(GenerationMixin):
         return drawn
 
     def rollout(self) -> list[RolloutBatch]:
-        examples = self._draw(self.num_prompts_per_step)
+        examples = self._draw(self._prompts_per_rank)
         prompt_ids = [self.encode_prompt(self.train_benchmark, ex) for ex in examples]
         completions = self.generate(
             prompt_ids,

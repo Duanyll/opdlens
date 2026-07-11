@@ -59,5 +59,11 @@ SchedulerConfig = Annotated[
 def parse_scheduler(conf: SchedulerConfig, optimizer: torch.optim.Optimizer) -> Any:
     conf = dict(conf)
     class_name = conf.pop("class_name")
-    ctor = getattr(torch.optim.lr_scheduler, class_name)
+    ctor = getattr(torch.optim.lr_scheduler, class_name, None)
+    if ctor is None:
+        # Fall back to transformers' schedulers so configs can request e.g.
+        # ``get_cosine_schedule_with_warmup`` (warmup + cosine, as ms-swift uses).
+        import transformers.optimization as topt
+
+        ctor = getattr(topt, class_name)
     return ctor(optimizer, **conf)

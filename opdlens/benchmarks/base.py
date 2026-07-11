@@ -67,6 +67,15 @@ class BaseBenchmark(BaseModel):
     max_samples: int | None = None
     system_prompt: str | None = MATH_SYSTEM
 
+    # Prompt shape. ``answer_instruction`` is appended to the question (e.g. the
+    # EvalScope "...put your final answer within \boxed{}." line); ``few_shot_num``
+    # prepends that many in-context demos via ``_fewshot_prefix`` (dataset-specific).
+    # A train benchmark and an eval benchmark are SEPARATE instances, so on-policy
+    # rollout may run zero-shot while eval runs few-shot — one builder, one grader,
+    # and in-loop eval is byte-identical to reported eval (no select-vs-report skew).
+    answer_instruction: str | None = None
+    few_shot_num: int = 0
+
     # Eval-time sampling (SEPARATE from training-rollout sampling on the trainer).
     eval_temperature: float = 0.6
     eval_top_p: float = 1.0
@@ -81,8 +90,18 @@ class BaseBenchmark(BaseModel):
         messages: list[dict[str, str]] = []
         if self.system_prompt:
             messages.append({"role": "system", "content": self.system_prompt})
-        messages.append({"role": "user", "content": example.question})
+        content = ""
+        if self.few_shot_num > 0:
+            content += self._fewshot_prefix()
+        content += example.question
+        if self.answer_instruction:
+            content += "\n" + self.answer_instruction
+        messages.append({"role": "user", "content": content})
         return messages
+
+    def _fewshot_prefix(self) -> str:
+        """In-context demo block prepended when ``few_shot_num > 0`` (dataset-specific)."""
+        raise NotImplementedError(f"{self.type} does not implement few-shot demos")
 
     # ------------------------------- Row loading ------------------------------ #
 
