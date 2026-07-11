@@ -71,7 +71,7 @@ showing none of the 0.1-pilot collapse.
 | `/gdata/users/duanyll/jlens/qwen3p5_9b_v2/lens.pt` | teacher Jacobian, 264 prompts | ready |
 | `/gdata/users/duanyll/jlens/qwen3p5_bridge/bridge.pt` | per-layer 9B->2B bridge | ready |
 | `/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens.pt` | student Jacobian, raw questions | superseded; calibration mismatch |
-| `/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens-cot.pt` | student Jacobian, 264 question+gold-CoT chats | two shards running concurrently in job 4166; resumes 40/72 completed shard prompts from 4150/4155 |
+| `/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens-cot.pt` | student Jacobian, 264 question+gold-CoT chats | ready; job 4166 complete, layers 6/12/18 finite 2048x2048 matrices |
 
 ## Run ledger
 
@@ -84,10 +84,10 @@ The same commit is also stored in the Slurm job comment.
 | `logitlens-full-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_logitlens_full_aux0p01.jsonc` | `035832d` | 4144 | complete; step-300 acc 0.8052 |
 | `logitlens-lora-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_logitlens_lora_aux0p01.jsonc` | `72930be` | 4146 | complete; step-300 acc 0.7809 |
 | `jlens-full-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_jlens_full_aux0p01.jsonc` | `02702c6` | 4145 | complete; step-300 acc 0.7854 |
-| `jlens-lora-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_jlens_lora_aux0p01.jsonc` | `9755e55` | 4147 | stable, running |
-| `hiddenmse-full-aux1.94` | `current-hidden-shared` | `examples/gsm8k_round1_hiddenmse_full_aux1p94.jsonc` | `f3d3ff9` | 4153 | stable, running; replaces underweighted 4140 |
+| `jlens-lora-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_jlens_lora_aux0p01.jsonc` | `9755e55` | 4147 | complete; step-300 acc 0.7604 |
+| `hiddenmse-full-aux1.94` | `current-hidden-shared` | `examples/gsm8k_round1_hiddenmse_full_aux1p94.jsonc` | `f3d3ff9` | 4153 | complete; step-300 acc 0.8052; replaces underweighted 4140 |
 | `hiddenmse-lora-aux1.94` | `current-hidden-shared` | `examples/gsm8k_round1_hiddenmse_lora_aux1p94.jsonc` | `d6fceee` | 4154 | stable, running; replaces underweighted 4141 |
-| `symjlens-full-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_full_aux0p01.jsonc` | `4476408` | 4167 | dependency on corrected student-lens job 4166; replaces 4158 |
+| `symjlens-full-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_full_aux0p01.jsonc` | `4476408` | 4167 | running after artifact job 4166; replaces 4158 |
 | `symjlens-lora-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_lora_aux0p01.jsonc` | `ce66f87` | 4168 | dependency on corrected student-lens job 4166; replaces 4159 |
 | `logitlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_logitlens_full_legacy.jsonc` | `c17ca55` | 4160 | running; triggered C-full fallback |
 | `jlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_jlens_full_legacy.jsonc` | `80b92c0` | 4161 | running; triggered C-full fallback |
