@@ -29,7 +29,7 @@ The reference curves are `logits-full`: 0.7491 / 0.8165 / 0.8332 / 0.8256 and
 |---|---|---|
 | `/gdata/users/duanyll/jlens/qwen3p5_9b_v2/lens.pt` | teacher Jacobian, 264 prompts | ready |
 | `/gdata/users/duanyll/jlens/qwen3p5_bridge/bridge.pt` | per-layer 9B->2B bridge | ready |
-| `/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens.pt` | student Jacobian, 264 prompts | pending fit |
+| `/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens.pt` | student Jacobian, 264 prompts | fitting in job 4127 (`dc31e3c`) |
 
 ## Run ledger
 
@@ -54,3 +54,9 @@ A run is stable only after model/vLLM initialization, the first successful train
 step, finite base/aux/total losses and gradient norm, healthy GPU utilization, and
 at least one scheduled eval. Checks are frequent until that point. Stable jobs are
 checked every 30 minutes, relaxed to hourly only after sustained healthy behavior.
+
+## Launch incidents
+
+Jobs 4128-4133 exited before Python startup because Slurm resolved `env` to a
+non-executable user-local path. No model or dataset state was touched. The launcher
+now invokes `/usr/bin/env` explicitly; replacement jobs are recorded in the ledger.
