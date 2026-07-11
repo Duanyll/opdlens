@@ -78,6 +78,13 @@ and `checkpoint_root`. `tests/test_spine.py` validates all configs through
 `OpdTrainer` and compares the remaining spine byte-for-byte. The dataset revisions,
 full-MATH protocol, two-GPU allocation, and LoRA checkpoint policy are also pinned.
 
+The 2026-07-12 02:16 HKT pre-release audit passed all eight spine/protocol tests.
+For every ledger row, the config blob at the recorded launch commit is byte-identical
+to the checked-in config, contains the corrected MATH reference parser in its
+ancestry, and matches the commit/run pair stored in the Slurm job comment. None of
+the ten checkpoint roots exists before release, so no job can silently resume an
+older run under the same experiment name.
+
 ## Launch gates
 
 1. All GSM8K current and triggered-legacy jobs finish successfully. Slurm barrier
