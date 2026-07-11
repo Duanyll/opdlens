@@ -166,6 +166,11 @@ one GPU, eight CPUs, and 60 GiB. Pending E
 jobs 4158/4159/4162/4165 consumed no GPU and were replaced by 4167-4170 with fresh
 launch commits and the corrected dependency.
 
+Current E-full job 4167 loads the merged artifact successfully. Its first update is
+finite: base 0.03733, raw auxiliary 4.8195, weighted auxiliary/base ratio 1.29x,
+and gradient norm 0.8477. This lies between the stable B/C scale rather than the
+failed 0.1-pilot regime; the job remains gated on its first scheduled evaluation.
+
 ## Archaeological setting audit
 
 The collapse is explained by setting scale, not by a hidden-state capture,
