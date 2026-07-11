@@ -199,13 +199,13 @@ the cache-isolated runner.
 
 | Run | Config | Commit | Slurm job | State |
 |---|---|---|---|---|
-| `logits-full-chunk256vllm020` | `examples/dapo17k_math_round1_logits_full.jsonc` | `43f62df` | 4218 | stable at step 176; step-100 acc 0.6660; replaces 4208 |
-| `logits-lora-chunk256vllm020` | `examples/dapo17k_math_round1_logits_lora.jsonc` | `408ab83` | 4219 | stable at step 166; step-100 acc 0.6638; replaces 4209 |
+| `logits-full-chunk256vllm020` | `examples/dapo17k_math_round1_logits_full.jsonc` | `43f62df` | 4218 | stable at step 213; step-200 acc 0.6782; replaces 4208 |
+| `logits-lora-chunk256vllm020` | `examples/dapo17k_math_round1_logits_lora.jsonc` | `408ab83` | 4219 | stable at step 201; step-200 acc 0.6572; replaces 4209 |
 | `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `8ae5a7f` | 4220 | failed in shared NFS compile cache; replaces 4210 |
-| `logitlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_lora.jsonc` | `fad5d85` | 4221 | stable at step 157; step-100 acc 0.6426; replaces 4211 |
-| `jlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_jlens_full.jsonc` | `91a0d43` | 4222 | stable at step 154; step-100 acc 0.6400; replaces 4212 |
-| `jlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_jlens_lora.jsonc` | `e94f206` | 4223 | stable at step 148; step-100 acc 0.6290; replaces 4213 |
-| `hiddenmse-full-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_full.jsonc` | `99ac47c` | 4224 | stable at step 172; step-100 acc 0.6242; replaces 4214 |
+| `logitlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_lora.jsonc` | `fad5d85` | 4221 | stable at step 195; step-100 acc 0.6426; replaces 4211 |
+| `jlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_jlens_full.jsonc` | `91a0d43` | 4222 | stable at step 191; step-100 acc 0.6400; replaces 4212 |
+| `jlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_jlens_lora.jsonc` | `e94f206` | 4223 | stable at step 183; step-100 acc 0.6290; replaces 4213 |
+| `hiddenmse-full-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_full.jsonc` | `99ac47c` | 4224 | stable at step 208; step-200 acc 0.6462; replaces 4214 |
 | `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `8ece700` | 4225 | cancelled before start for cache-isolated replacement |
 | `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `cc143ee` | 4226 | cancelled before start for cache-isolated replacement |
 | `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `200715c` | 4227 | cancelled before start for cache-isolated replacement |
@@ -268,3 +268,12 @@ for B-LoRA, 0.63x/0.81x for C-full/LoRA, and 0.59x for D-full; the lower step-10
 C/D scores are not accompanied by loss divergence. The 12 allocated GPUs average
 87-100% utilization and 338-374 W over five minutes. Jobs 4228-4231 remain queued
 for the next released slots.
+
+At 06:48 HKT, A-full, A-LoRA, and D-full had completed step-200 checkpoints and
+evaluations at 0.6782, 0.6572, and 0.6462 respectively. D recovered from its
+step-100 low of 0.6242 to the initialization level rather than continuing to
+collapse. B-LoRA and C-full/LoRA were still at step 183-195 and had not yet
+evaluated step 200. All six latest losses and gradients remain finite with no new
+alert or error. The 12 GPUs average 76-100% utilization and 263-381 W over five
+minutes; the temporarily lower pair had just completed checkpoint/eval and remained
+well above idle power. Jobs 4228-4231 remain queued.
