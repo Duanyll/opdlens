@@ -19,6 +19,12 @@ round-one matrix. No DAPO/MATH training job has been submitted yet.
 - Both pinned datasets have been loaded once and verified under
   `HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1`, matching the batch-job environment.
 
+This pairing is not a held-out generalization test: 970 of the 5,000 MATH test
+questions (19.4%) occur verbatim in DAPO17K, or 972 after whitespace/case
+normalization. The requested full DAPO17K and full MATH test are retained without
+filtering, so cross-arm contrasts remain controlled, but absolute post-training
+MATH accuracy must be labelled partly in-distribution rather than a clean OOD score.
+
 ## Fixed protocol
 
 - Teacher/student: `Qwen/Qwen3.5-9B` -> `Qwen/Qwen3.5-2B`.
