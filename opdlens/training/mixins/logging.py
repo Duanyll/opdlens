@@ -74,9 +74,15 @@ class LoggingMixin(BaseTrainer):
         self._metrics_file = (self._run_dir / "metrics.jsonl").open(
             "a", encoding="utf-8"
         )
+        # Run name is the (meaningful) experiment_name so the dashboard shows
+        # "gkd-lora" rather than a timestamp-hash; the project groups a dataset's
+        # arms together (set trackio_project per dataset, e.g. opdlens-gsm8k). The
+        # full trainer config (arm, losses, optimizer, batch, ...) is logged so every
+        # run carries its hyperparameters.
         trackio.init(
             project=self.trackio_project or self.experiment_name,
-            name=self.run_id,
+            name=self.experiment_name,
+            config=self.model_dump(mode="json"),
             resume="allow",
         )
         self._tracker_active = True

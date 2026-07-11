@@ -6,7 +6,8 @@
   "$schema": "../schema/opd.schema.json",
   "launch": { "type": "opd", "devices": 1, "env": { "HF_HUB_OFFLINE": "1" } },
   "experiment_name": "repro-gkd-2b-lora",
-  "trackio_project": "opdlens-repro-gkd",
+  // Project = dataset, so a dataset's arms (A/B/C/D) group together for comparison.
+  "trackio_project": "opdlens-gsm8k",
   "seed": 42,
 
   "student": {
