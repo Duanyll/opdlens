@@ -35,14 +35,15 @@ profile is an additional experiment, never an in-place replacement.
 | `current-vocab-compat` | 4144-4147 (B/C) | JSD beta 0.5, base T=0.9; rollout T=0.9, top-p 1, max 768, thinking off; full GSM8K fixed-step eval | full LR 2e-5 / LoRA LR 5e-5; AdamW wd 0.1; 30-step warmup + cosine; global batch 96 | B/C weight 0.01; 512 cap sampled independently per layer, matching pre-knob opdlens behavior |
 | `current-hidden-shared` | 4153/4154 (D) | same current spine | same current optimizer/batch | D weight 1.94; one shared 512-token subset across layers; bridge and MSE in fp32 |
 | `current-sym-shared` | 4158/4159 (E) | same current spine | same current optimizer/batch | E weight 0.01; one shared 512-token subset; completion-matched teacher/student Jacobian lenses |
-| `legacy-bce-full` | conditional, not submitted | current prompt/grader and fixed-step reporting retained; forward-KL base T=1; rollout T=1, top-p 1, max 512 | historical full LR 2e-6, AdamW wd 0, constant LR, global batch 8 | B/C/E weight 0.01 and shared 512-token subset; this imports old numerical settings without reviving the old 200-question proxy eval |
-| `legacy-bce-lora-hybrid` | conditional, not submitted | same as `legacy-bce-full` | no historical LoRA setting exists, so LoRA LR 5e-5 and adapter definition remain from the validated current baseline; global batch 8 | otherwise identical to `legacy-bce-full`; explicitly a hybrid, not claimed as an exact old reproduction |
+| `legacy-bce-full` | 4160-4162 (B/C/E) | current prompt/grader and fixed-step reporting retained; forward-KL base T=1; rollout T=1, top-p 1, max 512 | historical full LR 2e-6, AdamW wd 0, constant LR, global batch 8 | B/C/E weight 0.01 and shared 512-token subset; this imports old numerical settings without reviving the old 200-question proxy eval |
+| `legacy-bce-lora-hybrid` | 4163-4165 (B/C/E) | same as `legacy-bce-full` | no historical LoRA setting exists, so LoRA LR 5e-5 and adapter definition remain from the validated current baseline; global batch 8 | otherwise identical to `legacy-bce-full`; explicitly a hybrid, not claimed as an exact old reproduction |
 
 `aux_token_policy` defaults to `compat`, and D's `mse_dtype` defaults to `input`.
 Thus configs written before these knobs retain the behavior they had before commit
 `b28d6f1`. Corrected profiles opt in with `aux_token_policy: "shared"`; D also
 sets `mse_dtype: "fp32"`. Generated configs follow the same backward-compatible
-defaults unless the flags are passed explicitly.
+defaults under the default `current` profile. The explicit `legacy` profile opts
+into shared sampling while leaving old checked-in configs unaffected.
 
 The legacy B/C/E matrix is appended, not substituted, if either (a) a run drops
 more than 5 percentage points below its own step-0 score at a scheduled eval, or
@@ -50,6 +51,12 @@ more than 5 percentage points below its own step-0 score at a scheduled eval, or
 below the matching logits baseline at the same fixed steps. A final step-300 gap
 over two pooled standard errors also triggers it. This avoids reacting to one noisy
 checkpoint and never performs best-step selection.
+
+The fallback trigger fired on the current C-full run at both required checkpoints.
+At step 100, C scored 0.7619 versus logits-full 0.8165, a 0.0546 gap versus a
+two-pooled-SE threshold of 0.0317. At step 200, C scored 0.8014 versus 0.8332, a
+0.03184 gap versus a threshold of 0.03008. The legacy matrix was therefore
+appended as jobs 4160-4165; the current matrix remains running and is not replaced.
 
 ## Offline artifacts
 
@@ -76,6 +83,12 @@ The same commit is also stored in the Slurm job comment.
 | `hiddenmse-lora-aux1.94` | `current-hidden-shared` | `examples/gsm8k_round1_hiddenmse_lora_aux1p94.jsonc` | `d6fceee` | 4154 | stable, running; replaces underweighted 4141 |
 | `symjlens-full-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_full_aux0p01.jsonc` | `564f218` | 4158 | dependency on student-lens job 4155 |
 | `symjlens-lora-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_lora_aux0p01.jsonc` | `ada5396` | 4159 | dependency on student-lens job 4155 |
+| `logitlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_logitlens_full_legacy.jsonc` | `c17ca55` | 4160 | queued; triggered C-full fallback |
+| `jlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_jlens_full_legacy.jsonc` | `80b92c0` | 4161 | queued; triggered C-full fallback |
+| `symjlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_symjlens_full_legacy.jsonc` | `8dc8dd8` | 4162 | dependency on student-lens job 4155 |
+| `logitlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_logitlens_lora_legacy.jsonc` | `55dddaf` | 4163 | queued; triggered C-full fallback |
+| `jlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_jlens_lora_legacy.jsonc` | `a347715` | 4164 | queued; triggered C-full fallback |
+| `symjlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_symjlens_lora_legacy.jsonc` | `89d8387` | 4165 | dependency on student-lens job 4155 |
 
 ## Monitoring
 
@@ -83,6 +96,11 @@ A run is stable only after model/vLLM initialization, the first successful train
 step, finite base/aux/total losses and gradient norm, healthy GPU utilization, and
 at least one scheduled eval. Checks are frequent until that point. Stable jobs are
 checked every 30 minutes, relaxed to hourly only after sustained healthy behavior.
+
+At the 2026-07-12 00:23 HKT checkpoint, jobs 4144-4147 and 4153/4154 occupied all
+12 available A800s on nodes 1/2. Their five-minute GPU averages were 57-88% util
+and 200-351 W; no allocated GPU was idling near 100 W. Nine fit/train jobs remained
+queued behind them, including all six triggered legacy runs.
 
 ## Launch incidents
 
@@ -108,7 +126,8 @@ Jobs 4140/4141 were cancelled after steps 181/100 despite healthy
 curves, because the comparison was underweighted. Jobs 4153/4154 use 1.94, whose
 initial absolute contribution (0.0476) lies between B (0.0310) and C (0.0589).
 The corrected step-50 accuracies are 0.7885 (full) and 0.7748 (LoRA), both up
-from 0.7475 with finite losses and gradient norms.
+from 0.7475 with finite losses and gradient norms. Their step-100 accuracies are
+0.7824 and 0.7741; D-full reaches 0.8089 at step 150.
 
 The archaeological audit also found two token-semantics regressions. B/C/E had
 sampled a different capped token subset for every layer, while D ignored the
