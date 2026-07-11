@@ -5,7 +5,7 @@
   // at steps 0/100/200/300. This is the FULL fine-tune variant (see *_lora for LoRA).
   "$schema": "../schema/opd.schema.json",
   "launch": { "type": "opd", "devices": 1, "env": { "HF_HUB_OFFLINE": "1" } },
-  "experiment_name": "repro-gkd-2b-full",
+  "experiment_name": "logits-full",  // arm A (logits) + full FT — see docs/naming.md
   // Project = dataset, so a dataset's arms (A/B/C/D) group together for comparison.
   "trackio_project": "opdlens-gsm8k",
   "seed": 42,
