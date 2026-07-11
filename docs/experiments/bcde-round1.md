@@ -94,7 +94,7 @@ The same commit is also stored in the Slurm job comment.
 | `symjlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_symjlens_full_legacy.jsonc` | `810ab6f` | 4169 | stable; step-200 acc 0.7930; replaces 4162 |
 | `logitlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_logitlens_lora_legacy.jsonc` | `3c32077` | 4171 | complete; step-300 acc 0.7847; replaces pending 4163 |
 | `jlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_jlens_lora_legacy.jsonc` | `fed3cb2` | 4172 | complete; step-300 acc 0.7885; replaces pending 4164 |
-| `symjlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_symjlens_lora_legacy.jsonc` | `db69357` | 4170 | stable; step-100 acc 0.7559; replaces 4165 |
+| `symjlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_symjlens_lora_legacy.jsonc` | `db69357` | 4170 | stable; step-150 acc 0.7680; replaces 4165 |
 
 ## Monitoring
 
@@ -181,7 +181,7 @@ E-LoRA job 4168 is likewise finite: at step 11 its base is 0.03511, raw auxiliar
 4.8686, weighted auxiliary/base ratio 1.39x, and gradient norm 0.0676. Under the
 legacy full profile, E reaches 0.7817/0.7885/0.7900/0.7930 at steps
 50/100/150/200 from the common 0.7475 start; legacy E-LoRA reaches
-0.7574/0.7559 at steps 50/100.
+0.7574/0.7559/0.7680 at steps 50/100/150.
 
 ## Archaeological setting audit
 
