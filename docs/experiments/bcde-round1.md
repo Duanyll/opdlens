@@ -14,7 +14,8 @@ not change the model family mid-matrix.
 - Optimizer: the validated baseline values, including 2e-5 for full and 5e-5 for
   LoRA. Each run uses two A800 GPUs with the global batch held fixed.
 - Auxiliary protocol: teacher layers 8/16/24, mapped student layers 6/12/18.
-  D uses weight 0.1; after the failed scale pilots, vocab-KL arms B/C/E use 0.01.
+  After archaeology and scale calibration, vocab-KL arms B/C/E use weight 0.01
+  and raw hidden-MSE arm D uses 1.94.
   Apart from the arm block and run/checkpoint identity, all training and evaluation
   fields come directly from the matching logits baseline.
 - LoRA saves every evaluated trained state (steps 50/100/150/200/250/300) and
@@ -31,7 +32,7 @@ The reference curves are `logits-full`: 0.7491 / 0.8165 / 0.8332 / 0.8256 and
 | `/gdata/users/duanyll/jlens/qwen3p5_9b_v2/lens.pt` | teacher Jacobian, 264 prompts | ready |
 | `/gdata/users/duanyll/jlens/qwen3p5_bridge/bridge.pt` | per-layer 9B->2B bridge | ready |
 | `/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens.pt` | student Jacobian, raw questions | superseded; calibration mismatch |
-| `/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens-cot.pt` | student Jacobian, 264 question+gold-CoT chats | pending two-GPU sharded refit |
+| `/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens-cot.pt` | student Jacobian, 264 question+gold-CoT chats | queued two-GPU sharded refit, job 4155 |
 
 ## Run ledger
 
@@ -45,10 +46,10 @@ The same commit is also stored in the Slurm job comment.
 | `logitlens-lora-aux0.01` | `examples/gsm8k_round1_logitlens_lora_aux0p01.jsonc` | `72930be` | 4146 | running |
 | `jlens-full-aux0.01` | `examples/gsm8k_round1_jlens_full_aux0p01.jsonc` | `02702c6` | 4145 | running |
 | `jlens-lora-aux0.01` | `examples/gsm8k_round1_jlens_lora_aux0p01.jsonc` | `9755e55` | 4147 | running |
-| `hiddenmse-full` | `examples/gsm8k_round1_hiddenmse_full.jsonc` | `ec0743a` | 4140 | running |
-| `hiddenmse-lora` | `examples/gsm8k_round1_hiddenmse_lora.jsonc` | `bba97df` | 4141 | running |
-| `symjlens-full-aux0.01` | `examples/gsm8k_round1_symjlens_full_aux0p01.jsonc` | pending | pending | waiting on completion-aware student lens |
-| `symjlens-lora-aux0.01` | `examples/gsm8k_round1_symjlens_lora_aux0p01.jsonc` | pending | pending | waiting on completion-aware student lens |
+| `hiddenmse-full-aux1.94` | `examples/gsm8k_round1_hiddenmse_full_aux1p94.jsonc` | `f3d3ff9` | 4153 | running; replaces underweighted 4140 |
+| `hiddenmse-lora-aux1.94` | `examples/gsm8k_round1_hiddenmse_lora_aux1p94.jsonc` | `d6fceee` | 4154 | running; replaces underweighted 4141 |
+| `symjlens-full-aux0.01` | `examples/gsm8k_round1_symjlens_full_aux0p01.jsonc` | `1c8de64` | 4156 | dependency on student-lens job 4155 |
+| `symjlens-lora-aux0.01` | `examples/gsm8k_round1_symjlens_lora_aux0p01.jsonc` | `b845fea` | 4157 | dependency on student-lens job 4155 |
 
 ## Monitoring
 
@@ -63,18 +64,54 @@ Jobs 4128-4133 exited before Python startup because Slurm resolved `env` to a
 non-executable user-local path. No model or dataset state was touched. The launcher
 now invokes `/usr/bin/env` explicitly; replacement jobs are recorded in the ledger.
 
-The initial B/C/E configs used the example-arm weight 0.1. At step 50, B-full,
+The initial B/C configs used the example-arm weight 0.1. At step 50, B-full,
 B-LoRA, C-full, and C-LoRA scored 0.5838, 0.5580, 0.5792, and 0.4541 respectively,
 all down from 0.7475, while `hiddenmse-full` reached 0.8287.
 The raw vocab-KL auxiliary was about 3.1 for B and 5.9 for C versus a base loss
 near 0.037, so weight 0.1 made it dominate optimization. B/C/E replacements use
 the previously exercised jlens CoT weight 0.01 and a distinct `-aux0.01` run name;
-the failed pilots remain in Trackio as diagnostic evidence. D remains at 0.1
-because its initial weighted contribution was only about 0.0025 and its curve is
-healthy.
+the failed pilots remain in Trackio as diagnostic evidence. At weight 0.01, the
+step-50 B-full/B-LoRA/C-full/C-LoRA scores are 0.7892/0.7870/0.7437/0.7619, so
+none shows the earlier collapse. B-full and C-full reach 0.7870 and 0.7619 at
+step 100.
+
+The old raw hidden-MSE D arm did not use 0.1: its measured natural weight was
+1.94. Current step-1 raw D MSE is 0.02452, matching the old 0.0249, so 0.1 made
+the auxiliary only 0.066x of the current base and made D nearly a logits run.
+Jobs 4140/4141 were cancelled after steps 181/100 despite healthy
+curves, because the comparison was underweighted. Jobs 4153/4154 use 1.94, whose
+initial absolute contribution (0.0476) lies between B (0.0310) and C (0.0589).
+
+The archaeological audit also found two token-semantics regressions. B/C/E had
+sampled a different capped token subset for every layer, while D ignored the
+512-token cap; D also evaluated its bridge in bf16 instead of the old fp32.
+Commit `f2623bc` restores one shared token subset per sequence across layers,
+applies the cap to D, and computes the D bridge/MSE in fp32. The full test suite,
+Ruff, and Pyright pass. B/C jobs are retained: all four are stable, and the
+sampling difference changes only which identically distributed tokens are used
+when an individual completion exceeds the cap; it does not explain the failed
+0.1 pilots.
 
 The first student lens fit used raw GSM8K questions, whereas the existing v2
 teacher lens was calibrated on chat-formatted questions plus gold CoT completions.
 Jobs 4148/4149 had not started and were cancelled. The replacement student lens
 uses the same completion-aware distribution, split across two GPUs and merged;
 E will only launch after that artifact succeeds.
+
+The first two-GPU replacement fit, job 4150, exposed a Slurm-step resource bug:
+shard 0 occupied the non-GPU resources of the allocation and shard 1 waited while
+GPU 1 sat idle. It and dependent jobs 4151/4152 were cancelled. Commit `e49dc8b`
+adds exact per-step CPU/memory requests; replacement fit 4155 gates E jobs
+4156/4157.
+
+## Archaeological setting audit
+
+The collapse is explained by setting scale, not by a hidden-state capture,
+readout, Jacobian-direction, layer-map, completion-mask, or KL-direction bug.
+The old B/C runs used forward KL base loss near 0.16, constant full-finetune LR
+2e-6, batch 8, and auxiliary weight 0.01. The current validated logits spine uses
+JSD beta 0.5 near 0.037, peak full LR 2e-5 (LoRA 5e-5), global batch 96, and the
+same raw auxiliary magnitudes. Thus weight 0.1 changed the initial weighted
+aux/base ratios from roughly 0.20x/0.37x in the old B/C runs to 8.30x/15.77x.
+The corrected 0.01 ratios are 0.83x/1.58x and have passed the first scheduled
+evaluations.
