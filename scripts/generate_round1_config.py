@@ -65,14 +65,34 @@ def arm_config(
     return configs[arm]
 
 
+def apply_legacy_profile(config: dict[str, Any], finetune: str) -> None:
+    """Apply the historical jlens numerical recipe on the current eval spine."""
+    config.update(
+        {
+            "base_beta": 0.0,
+            "base_temperature": 1.0,
+            "rollout_temperature": 1.0,
+            "rollout_top_p": 1.0,
+            "rollout_max_tokens": 512,
+            "global_batch_size": 8,
+            "scheduler_config": {"class_name": "ConstantLR", "factor": 1.0},
+        }
+    )
+    config["optimizer_config"] = {
+        "class_name": "AdamW",
+        "lr": 2e-6 if finetune == "full" else 5e-5,
+        "betas": [0.9, 0.999],
+        "weight_decay": 0.0,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--arm", choices="bcde", required=True)
     parser.add_argument("--finetune", choices=("full", "lora"), required=True)
-    parser.add_argument("--aux-weight", type=float, default=0.1)
-    parser.add_argument(
-        "--aux-token-policy", choices=("compat", "shared"), default="compat"
-    )
+    parser.add_argument("--profile", choices=("current", "legacy"), default="current")
+    parser.add_argument("--aux-weight", type=float)
+    parser.add_argument("--aux-token-policy", choices=("compat", "shared"))
     parser.add_argument("--mse-dtype", choices=("input", "fp32"), default="input")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
@@ -80,12 +100,24 @@ def main() -> None:
     baseline_path = Path(f"examples/repro_gkd_2b_{args.finetune}.jsonc")
     baseline = load_config_file(str(baseline_path))
     config = deepcopy(baseline)
+    if args.profile == "legacy" and args.arm == "d":
+        parser.error("the legacy fallback matrix contains only arms B/C/E")
+    aux_weight = args.aux_weight
+    if aux_weight is None:
+        aux_weight = 0.01 if args.profile == "legacy" else 0.1
+    aux_token_policy = args.aux_token_policy
+    if aux_token_policy is None:
+        aux_token_policy = "shared" if args.profile == "legacy" else "compat"
     tag, config["arm"] = arm_config(
-        args.arm, args.aux_weight, args.aux_token_policy, args.mse_dtype
+        args.arm, aux_weight, aux_token_policy, args.mse_dtype
     )
-    run_name = f"{tag}-{args.finetune}"
-    if args.aux_weight != 0.1:
-        run_name += f"-aux{args.aux_weight:g}"
+    if args.profile == "legacy":
+        apply_legacy_profile(config, args.finetune)
+        run_name = f"{tag}-{args.finetune}-legacy"
+    else:
+        run_name = f"{tag}-{args.finetune}"
+        if aux_weight != 0.1:
+            run_name += f"-aux{aux_weight:g}"
     config["experiment_name"] = run_name
     config["launch"]["devices"] = 2
     config["checkpoint_root"] = f"{OPDLENS_ROOT}/ckpt/{run_name}"

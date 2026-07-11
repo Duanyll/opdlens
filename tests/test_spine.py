@@ -14,6 +14,7 @@ import torch
 
 from opdlens.arms import parse_arm
 from opdlens.losses import opd_base_loss
+from opdlens.training import OpdTrainer
 from opdlens.utils.config import load_config_file
 
 _EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
@@ -28,6 +29,59 @@ def test_configs_differ_only_in_arm():
     for name in ("b", "c", "d", "e"):
         other = {k: v for k, v in configs[name].items() if k != "arm"}
         assert other == baseline, f"arm_{name}.jsonc differs outside the arm block"
+
+
+def test_legacy_bce_configs_share_one_spine_and_validate():
+    """The triggered fallback matrix may vary only by arm within each tune mode."""
+    for finetune in ("full", "lora"):
+        configs = {
+            arm: load_config_file(
+                str(_EXAMPLES / f"gsm8k_round1_{arm}_{finetune}_legacy.jsonc")
+            )
+            for arm in ("logitlens", "jlens", "symjlens")
+        }
+        for config in configs.values():
+            OpdTrainer(**config)
+
+        def spine(config: dict) -> dict:
+            return {
+                key: value
+                for key, value in config.items()
+                if key not in {"arm", "checkpoint_root", "experiment_name"}
+            }
+
+        baseline = spine(configs["logitlens"])
+        for arm in ("jlens", "symjlens"):
+            assert spine(configs[arm]) == baseline
+
+
+def test_legacy_bce_profile_is_pinned():
+    for finetune, expected_lr in (("full", 2e-6), ("lora", 5e-5)):
+        config = load_config_file(
+            str(_EXAMPLES / f"gsm8k_round1_logitlens_{finetune}_legacy.jsonc")
+        )
+        assert config["base_beta"] == 0.0
+        assert config["base_temperature"] == 1.0
+        assert config["rollout_temperature"] == 1.0
+        assert config["rollout_top_p"] == 1.0
+        assert config["rollout_max_tokens"] == 512
+        assert config["global_batch_size"] == 8
+        assert config["optimizer_config"] == {
+            "class_name": "AdamW",
+            "lr": expected_lr,
+            "betas": [0.9, 0.999],
+            "weight_decay": 0.0,
+        }
+        assert config["scheduler_config"] == {
+            "class_name": "ConstantLR",
+            "factor": 1.0,
+        }
+        assert config["arm"]["aux_weight"] == 0.01
+        assert config["arm"]["aux_token_policy"] == "shared"
+        assert config["launch"]["devices"] == 2
+        if finetune == "lora":
+            assert config["checkpoint_interval"] == config["eval_steps"]
+            assert config["max_checkpoints"] == 0
 
 
 def test_aux_weight_zero_gates_off_aux():
