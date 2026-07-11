@@ -13,9 +13,7 @@ from opdlens.utils.config import load_config_file
 
 CHECKPOINT_ROOT = "/gdata/users/duanyll/opdlens/ckpt/dapo17k-math"
 BRIDGE_PATH = "/gdata/users/duanyll/jlens/qwen3p5_bridge/bridge.pt"
-STUDENT_JACOBIAN_PATH = (
-    "/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens-cot.pt"
-)
+STUDENT_JACOBIAN_PATH = "/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens-cot.pt"
 TEACHER_JACOBIAN_PATH = "/gdata/users/duanyll/jlens/qwen3p5_9b_v2/lens.pt"
 DAPO_REVISION = "31dd309567e3da778038cc87d868b6097a3ccf68"
 MATH_REVISION = "21a5633873b6a120296cce3e2df9d5550074f4a3"
