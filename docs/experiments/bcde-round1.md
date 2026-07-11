@@ -179,6 +179,22 @@ one GPU, eight CPUs, and 60 GiB. Pending E
 jobs 4158/4159/4162/4165 consumed no GPU and were replaced by 4167-4170 with fresh
 launch commits and the corrected dependency.
 
+An execution-path probe at 02:23 HKT found that the original batch runner passed
+the snapshot through `PYTHONPATH` while running from the shared checkout. Python's
+working-directory entry therefore shadowed the archived package code; the config
+still came from the recorded snapshot, but the code import was not immutable.
+Commit `08687af` fixes both batch runners with Python safe-path mode and adds a
+regression test.
+
+Jobs 4167/4168 had already started before this discovery. The latest committed
+shared checkouts before their Python starts were `97b76f9` and `407b1a9`,
+respectively. Relative to their recorded commits, the changed files are limited to
+documentation, tests, the new DAPO runner, and the unused MATH benchmark parser;
+the trainer, arms, GSM8K benchmark, and both E configs are unchanged. Their
+scientific execution is therefore retained rather than spending four more A800
+card-hours on a byte-identical training path. The DAPO jobs, which had not started,
+were cancelled and replaced under the fixed runner.
+
 Current E-full job 4167 loads the merged artifact successfully. Its first update is
 finite: base 0.03733, raw auxiliary 4.8195, weighted auxiliary/base ratio 1.29x,
 and gradient norm 0.8477. This lies between the stable B/C scale rather than the
