@@ -4,8 +4,9 @@ Status: GSM8K barrier 4175 completed successfully. The first ten DAPO/MATH jobs
 4198-4207 all established the same 0.6472 step-0 MATH baseline, then exposed a
 shared base-loss backward-memory failure before step 1. Jobs 4208-4217 then exposed
 a vLLM Mamba-cache startup threshold before evaluation. The adjusted memory-bounded
-profile is submitted as jobs 4218-4227 under distinct `-chunk256vllm020` run names;
-six jobs occupy all 12 available A800s and four remain queued.
+profile uses retained jobs 4218/4219/4221-4224 plus cache-isolated replacements
+4228-4231 under distinct `-chunk256vllm020` run names; six jobs occupy all 12
+available A800s and four remain queued.
 
 ## Dataset identity
 
@@ -200,15 +201,28 @@ the cache-isolated runner.
 |---|---|---|---|---|
 | `logits-full-chunk256vllm020` | `examples/dapo17k_math_round1_logits_full.jsonc` | `43f62df` | 4218 | running; replaces 4208 |
 | `logits-lora-chunk256vllm020` | `examples/dapo17k_math_round1_logits_lora.jsonc` | `408ab83` | 4219 | running; replaces 4209 |
-| `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `8ae5a7f` | 4220 | running; replaces 4210 |
+| `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `8ae5a7f` | 4220 | failed in shared NFS compile cache; replaces 4210 |
 | `logitlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_lora.jsonc` | `fad5d85` | 4221 | running; replaces 4211 |
 | `jlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_jlens_full.jsonc` | `91a0d43` | 4222 | running; replaces 4212 |
 | `jlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_jlens_lora.jsonc` | `e94f206` | 4223 | running; replaces 4213 |
 | `hiddenmse-full-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_full.jsonc` | `99ac47c` | 4224 | queued; replaces 4214 |
-| `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `8ece700` | 4225 | queued; replaces 4215 |
-| `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `cc143ee` | 4226 | queued; replaces 4216 |
-| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `200715c` | 4227 | queued; replaces 4217 |
+| `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `8ece700` | 4225 | cancelled before start for cache-isolated replacement |
+| `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `cc143ee` | 4226 | cancelled before start for cache-isolated replacement |
+| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `200715c` | 4227 | cancelled before start for cache-isolated replacement |
 
 At 04:04 HKT, jobs 4218-4223 occupied all 12 A800s and jobs 4224-4227 were
 ready in the queue. Every Slurm comment records the matching full commit and run
 name; each job has its own pre-launch commit and immutable snapshot.
+
+### Cache-isolated replacements
+
+| Run | Config | Commit | Slurm job | State |
+|---|---|---|---|---|
+| `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `b0dc53f` | 4228 | queued; replaces failed 4220 |
+| `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `0e93d89` | 4229 | queued; replaces unstarted 4225 |
+| `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `1e2551a` | 4230 | queued; replaces unstarted 4226 |
+| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `58ecd62` | 4231 | queued; replaces unstarted 4227 |
+
+At 04:12 HKT, jobs 4218/4219/4221-4224 occupied all 12 A800s; jobs 4228-4231
+were ready in the queue. The three cancelled jobs had no start time and consumed
+no GPU. All replacements have matching pre-launch commits, comments, and snapshots.
