@@ -9,6 +9,7 @@ runs/
 logs/
 checkpoints/
 wandb/
+slurm-*.out
 
 # Fitted artifacts + model weights
 *.pt

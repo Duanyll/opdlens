@@ -27,6 +27,7 @@ MATH_SUBJECTS = [
     "precalculus",
 ]
 TEACHER_LAYERS = [8, 16, 24]
+MEMORY_PROFILE = "chunk256"
 
 
 def arm_config(arm: str) -> tuple[str, dict[str, Any]]:
@@ -101,9 +102,12 @@ def apply_dataset_spine(config: dict[str, Any]) -> None:
     ]
     config["eval_max_samples"] = None
     config["rollout_max_tokens"] = 2048
+    config["base_loss_chunk_size"] = 256
+    config["vllm_gpu_memory_utilization"] = 0.18
     config["eval_steps"] = 100
     config["launch"]["devices"] = 2
     config["launch"]["env"]["HF_DATASETS_OFFLINE"] = "1"
+    config["launch"]["env"]["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
 
 def main() -> None:
@@ -117,7 +121,7 @@ def main() -> None:
     config = deepcopy(baseline)
     apply_dataset_spine(config)
     tag, config["arm"] = arm_config(args.arm)
-    run_name = f"{tag}-{args.finetune}"
+    run_name = f"{tag}-{args.finetune}-{MEMORY_PROFILE}"
     config["experiment_name"] = run_name
     config["checkpoint_root"] = f"{CHECKPOINT_ROOT}/{run_name}"
     if args.finetune == "lora":

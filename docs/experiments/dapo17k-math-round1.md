@@ -1,8 +1,9 @@
 # DAPO17K to MATH round 1
 
-Status: all ten experiments are submitted behind GSM8K barrier job 4175. They are
-present in the queue but cannot consume GPUs until both remaining current GSM8K
-jobs exit successfully.
+Status: GSM8K barrier 4175 completed successfully. The first ten DAPO/MATH jobs
+4198-4207 all established the same 0.6472 step-0 MATH baseline, then exposed a
+shared base-loss backward-memory failure before step 1. A memory-bounded replacement
+profile is being validated and requeued under distinct `-chunk256` run names.
 
 ## Dataset identity
 
@@ -40,6 +41,12 @@ MATH accuracy must be labelled partly in-distribution rather than a clean OOD sc
 - DAPO rollout is temperature 0.9, top-p 1, max 2,048 tokens. Measured prompt-token
   percentiles are p50=114, p95=226, p99=371, max=1,523, so the 4,096-token engine
   limit admits every prompt plus the configured completion budget.
+- The replacement profile checkpoints the mathematically identical base-loss
+  softmax graph in 256-token chunks, lowers only vLLM's operational GPU-memory
+  reservation from 0.25 to 0.18, and enables expandable CUDA allocator segments.
+  `base_loss_chunk_size` defaults to zero, preserving the old monolithic path for
+  every existing config. Dataset, sampling, loss, optimizer, batch, and 2,048-token
+  completion cap are unchanged.
 - Full-MATH eval is greedy pass@1 with max 2,048 tokens at fixed steps
   0/100/200/300. The lower cadence than GSM8K controls the cost of evaluating all
   5,000 rows; there is no best-step selection.
@@ -95,11 +102,11 @@ cancelled before start. Commit `5cd4f5c` additionally exports
 full runner environment. The complete suite has 27 passing tests; Ruff and Pyright
 pass.
 
-At 02:36 HKT, every final ledger commit contains `5cd4f5c`; its config blob is
+At 02:36 HKT, every initial ledger commit contains `5cd4f5c`; its config blob is
 byte-identical to the checked-in config and its commit/run pair matches the Slurm
 job comment. Slurm's stored batch scripts for the first and last matrix jobs also
 contain both safe-path controls, proving the submitted scripts captured the fix.
-All ten jobs are dependency-blocked on barrier 4175.
+All ten jobs remained dependency-blocked until barrier 4175 completed at 03:22 HKT.
 
 ## Launch gates
 
@@ -119,13 +126,32 @@ All ten jobs are dependency-blocked on barrier 4175.
 
 | Run | Config | Commit | Slurm job | State |
 |---|---|---|---|---|
-| `logits-full` | `examples/dapo17k_math_round1_logits_full.jsonc` | `4a37183` | 4198 | dependency on barrier 4175; replaces unstarted 4186/4176 |
-| `logits-lora` | `examples/dapo17k_math_round1_logits_lora.jsonc` | `9745def` | 4199 | dependency on barrier 4175; replaces unstarted 4188/4177 |
-| `logitlens-full` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `239a2f2` | 4200 | dependency on barrier 4175; replaces unstarted 4189/4178 |
-| `logitlens-lora` | `examples/dapo17k_math_round1_logitlens_lora.jsonc` | `6cc907d` | 4201 | dependency on barrier 4175; replaces unstarted 4191/4179 |
-| `jlens-full` | `examples/dapo17k_math_round1_jlens_full.jsonc` | `f4d09fc` | 4202 | dependency on barrier 4175; replaces unstarted 4192/4180 |
-| `jlens-lora` | `examples/dapo17k_math_round1_jlens_lora.jsonc` | `32b2396` | 4203 | dependency on barrier 4175; replaces unstarted 4193/4181 |
-| `hiddenmse-full` | `examples/dapo17k_math_round1_hiddenmse_full.jsonc` | `3ec201c` | 4204 | dependency on barrier 4175; replaces unstarted 4194/4182 |
-| `hiddenmse-lora` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `051ec10` | 4205 | dependency on barrier 4175; replaces unstarted 4195/4183 |
-| `symjlens-full` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `45d5113` | 4206 | dependency on barrier 4175; replaces unstarted 4196/4184 |
-| `symjlens-lora` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `2a45abf` | 4207 | dependency on barrier 4175; replaces unstarted 4197/4185 |
+| `logits-full` | `examples/dapo17k_math_round1_logits_full.jsonc` | `4a37183` | 4198 | failed before step 1: base-loss backward OOM after step-0 eval |
+| `logits-lora` | `examples/dapo17k_math_round1_logits_lora.jsonc` | `9745def` | 4199 | failed before step 1: same backward OOM |
+| `logitlens-full` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `239a2f2` | 4200 | failed before step 1: same backward OOM |
+| `logitlens-lora` | `examples/dapo17k_math_round1_logitlens_lora.jsonc` | `6cc907d` | 4201 | failed before step 1: same backward OOM |
+| `jlens-full` | `examples/dapo17k_math_round1_jlens_full.jsonc` | `f4d09fc` | 4202 | failed before step 1: same backward OOM |
+| `jlens-lora` | `examples/dapo17k_math_round1_jlens_lora.jsonc` | `32b2396` | 4203 | failed before step 1: same backward OOM |
+| `hiddenmse-full` | `examples/dapo17k_math_round1_hiddenmse_full.jsonc` | `3ec201c` | 4204 | failed before step 1: same backward OOM |
+| `hiddenmse-lora` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `051ec10` | 4205 | failed before step 1: same backward OOM |
+| `symjlens-full` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `45d5113` | 4206 | failed before step 1: same backward OOM |
+| `symjlens-lora` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `2a45abf` | 4207 | failed before step 1: same backward OOM |
+
+## Runtime incidents
+
+Jobs 4198-4207 all loaded the intended immutable snapshots, completed the full
+5,000-example step-0 MATH evaluation at 0.6472, generated their first on-policy
+batch, and then failed in `opd_base_loss` backward. Each rank had about 76-77 GiB
+in use and attempted one additional 4.04-GiB allocation. The trainer processes one
+sequence at a time, so lowering global batch would not address the peak. The cause
+is the monolithic fp32 `[T,V]` JSD graph exposed by longer DAPO completions, not an
+arm-specific auxiliary path; even both arm-A jobs failed identically.
+
+The replacement keeps the 2,048-token rollout protocol and exact JSD definition.
+It checkpoints the base divergence in 256-token slices so backward recomputes and
+releases one slice at a time. The new knob defaults to the original zero/monolithic
+behavior, and all ten replacement configs select the same value. A distinct
+`-chunk256` suffix prevents Trackio from appending different configs to the failed
+runs. A saved-tensor audit measures 0.251x of the original autograd state on the
+same JSD while matching both value and gradient; the full 29-test suite, Ruff, and
+Pyright pass. No failed job reached step 1 or wrote a checkpoint.

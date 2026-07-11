@@ -12,10 +12,11 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable
-from typing import Literal
+from typing import Literal, cast
 
 import torch
 import torch.nn.functional as F
+from torch.utils.checkpoint import checkpoint
 
 KLDir = Literal["forward", "reverse"]
 
@@ -100,6 +101,7 @@ def opd_base_loss(
     *,
     temperature: float = 1.0,
     beta: float = 0.0,
+    chunk_size: int = 0,
 ) -> torch.Tensor:
     """Plain OPD (arm A): masked-mean per-token divergence on final logits.
 
@@ -113,7 +115,30 @@ def opd_base_loss(
     by ``rollout_max_tokens`` instead, which is what keeps the ``[T, V]`` (V≈151k) fp32
     divergence within memory.
     """
-    per_pos = _generalized_jsd(teacher_logits, student_logits, temperature, beta)
+    if chunk_size < 0:
+        raise ValueError(f"chunk_size must be non-negative, got {chunk_size}.")
+    if chunk_size == 0 or student_logits.shape[0] <= chunk_size:
+        per_pos = _generalized_jsd(teacher_logits, student_logits, temperature, beta)
+    else:
+        # Checkpointing each token chunk avoids retaining the full [T, V] fp32
+        # softmax graph. Backward recomputes one chunk at a time with identical math.
+        def chunk_jsd(t: torch.Tensor, s: torch.Tensor) -> torch.Tensor:
+            return _generalized_jsd(t, s, temperature, beta)
+
+        per_pos = torch.cat(
+            [
+                cast(
+                    torch.Tensor,
+                    checkpoint(
+                        chunk_jsd,
+                        teacher_logits[start : start + chunk_size],
+                        student_logits[start : start + chunk_size],
+                        use_reentrant=False,
+                    ),
+                )
+                for start in range(0, student_logits.shape[0], chunk_size)
+            ]
+        )
     return _masked_mean(per_pos, loss_mask)
 
 

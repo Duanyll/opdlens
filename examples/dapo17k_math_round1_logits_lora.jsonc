@@ -5,10 +5,11 @@
     "devices": 2,
     "env": {
       "HF_HUB_OFFLINE": "1",
-      "HF_DATASETS_OFFLINE": "1"
+      "HF_DATASETS_OFFLINE": "1",
+      "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"
     }
   },
-  "experiment_name": "logits-lora",
+  "experiment_name": "logits-lora-chunk256",
   "trackio_project": "opdlens-math",
   "seed": 42,
   "student": {
@@ -68,7 +69,7 @@
   "rollout_temperature": 0.9,
   "rollout_top_p": 1.0,
   "rollout_max_tokens": 2048,
-  "vllm_gpu_memory_utilization": 0.25,
+  "vllm_gpu_memory_utilization": 0.18,
   "vllm_max_model_len": 4096,
   "vllm_enforce_eager": false,
   "global_batch_size": 96,
@@ -77,7 +78,7 @@
   "eval_steps": 100,
   "eval_at_start": true,
   "checkpoint_interval": 100,
-  "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/dapo17k-math/logits-lora",
+  "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/dapo17k-math/logits-lora-chunk256",
   "optimizer_config": {
     "class_name": "AdamW",
     "lr": 5e-05,
@@ -93,5 +94,6 @@
     "num_training_steps": 300
   },
   "clip_grad_norm": 1.0,
+  "base_loss_chunk_size": 256,
   "max_checkpoints": 0
 }

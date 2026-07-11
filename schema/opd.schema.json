@@ -1556,6 +1556,11 @@
       "title": "Base Beta",
       "type": "number"
     },
+    "base_loss_chunk_size": {
+      "default": 0,
+      "title": "Base Loss Chunk Size",
+      "type": "integer"
+    },
     "eval_steps": {
       "default": 50,
       "title": "Eval Steps",

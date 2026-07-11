@@ -127,6 +127,12 @@ def test_dapo_math_matrix_protocol_is_pinned():
         assert evaluation["eval_max_tokens"] == 2048
         assert config["eval_max_samples"] is None
         assert config["rollout_max_tokens"] == 2048
+        assert config["base_loss_chunk_size"] == 256
+        assert config["vllm_gpu_memory_utilization"] == 0.18
+        assert config["launch"]["env"]["PYTORCH_CUDA_ALLOC_CONF"] == (
+            "expandable_segments:True"
+        )
+        assert config["experiment_name"].endswith("-chunk256")
         assert config["eval_steps"] == 100
         assert config["launch"]["devices"] == 2
         if finetune == "lora":
@@ -210,3 +216,25 @@ def test_base_beta_selects_divergence():
     assert torch.allclose(
         opd_base_loss(teacher, teacher, mask, beta=0.5), torch.zeros(()), atol=1e-5
     )
+
+
+def test_chunked_base_loss_matches_value_and_gradient():
+    torch.manual_seed(7)
+    teacher = torch.randn(11, 37)
+    student_full = torch.randn(11, 37, requires_grad=True)
+    student_chunked = student_full.detach().clone().requires_grad_(True)
+    mask = torch.zeros(11, dtype=torch.bool)
+    mask[3:] = True
+
+    full = opd_base_loss(student_full, teacher, mask, beta=0.5)
+    chunked = opd_base_loss(student_chunked, teacher, mask, beta=0.5, chunk_size=3)
+    full.backward()
+    chunked.backward()
+
+    assert torch.allclose(chunked, full, atol=1e-7, rtol=1e-6)
+    assert torch.allclose(student_chunked.grad, student_full.grad, atol=1e-7, rtol=1e-5)
+
+
+def test_base_loss_chunking_defaults_to_old_path():
+    trainer = OpdTrainer.model_construct()
+    assert trainer.base_loss_chunk_size == 0
