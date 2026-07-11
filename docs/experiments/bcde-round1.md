@@ -89,8 +89,8 @@ The same commit is also stored in the Slurm job comment.
 | `hiddenmse-lora-aux1.94` | `current-hidden-shared` | `examples/gsm8k_round1_hiddenmse_lora_aux1p94.jsonc` | `d6fceee` | 4154 | stable, running; replaces underweighted 4141 |
 | `symjlens-full-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_full_aux0p01.jsonc` | `4476408` | 4167 | running after artifact job 4166; replaces 4158 |
 | `symjlens-lora-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_lora_aux0p01.jsonc` | `ce66f87` | 4168 | dependency on corrected student-lens job 4166; replaces 4159 |
-| `logitlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_logitlens_full_legacy.jsonc` | `c17ca55` | 4160 | running; triggered C-full fallback |
-| `jlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_jlens_full_legacy.jsonc` | `80b92c0` | 4161 | running; triggered C-full fallback |
+| `logitlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_logitlens_full_legacy.jsonc` | `c17ca55` | 4160 | complete; step-300 acc 0.7801 |
+| `jlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_jlens_full_legacy.jsonc` | `80b92c0` | 4161 | complete; step-300 acc 0.7733 |
 | `symjlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_symjlens_full_legacy.jsonc` | `810ab6f` | 4169 | dependency on corrected student-lens job 4166; replaces 4162 |
 | `logitlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_logitlens_lora_legacy.jsonc` | `3c32077` | 4171 | queued behind artifact fit; replaces pending 4163 |
 | `jlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_jlens_lora_legacy.jsonc` | `fed3cb2` | 4172 | queued behind artifact fit; replaces pending 4164 |
