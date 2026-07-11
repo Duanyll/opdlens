@@ -86,15 +86,15 @@ The same commit is also stored in the Slurm job comment.
 | `jlens-full-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_jlens_full_aux0p01.jsonc` | `02702c6` | 4145 | complete; step-300 acc 0.7854 |
 | `jlens-lora-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_jlens_lora_aux0p01.jsonc` | `9755e55` | 4147 | complete; step-300 acc 0.7604 |
 | `hiddenmse-full-aux1.94` | `current-hidden-shared` | `examples/gsm8k_round1_hiddenmse_full_aux1p94.jsonc` | `f3d3ff9` | 4153 | complete; step-300 acc 0.8052; replaces underweighted 4140 |
-| `hiddenmse-lora-aux1.94` | `current-hidden-shared` | `examples/gsm8k_round1_hiddenmse_lora_aux1p94.jsonc` | `d6fceee` | 4154 | stable, running; replaces underweighted 4141 |
-| `symjlens-full-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_full_aux0p01.jsonc` | `4476408` | 4167 | running after artifact job 4166; replaces 4158 |
+| `hiddenmse-lora-aux1.94` | `current-hidden-shared` | `examples/gsm8k_round1_hiddenmse_lora_aux1p94.jsonc` | `d6fceee` | 4154 | complete; step-300 acc 0.7718; replaces underweighted 4141 |
+| `symjlens-full-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_full_aux0p01.jsonc` | `4476408` | 4167 | stable; step-50 acc 0.7900; replaces 4158 |
 | `symjlens-lora-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_lora_aux0p01.jsonc` | `ce66f87` | 4168 | stable first updates, running; replaces 4159 |
 | `logitlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_logitlens_full_legacy.jsonc` | `c17ca55` | 4160 | complete; step-300 acc 0.7801 |
 | `jlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_jlens_full_legacy.jsonc` | `80b92c0` | 4161 | complete; step-300 acc 0.7733 |
-| `symjlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_symjlens_full_legacy.jsonc` | `810ab6f` | 4169 | stable; step-50 acc 0.7817; replaces 4162 |
-| `logitlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_logitlens_lora_legacy.jsonc` | `3c32077` | 4171 | queued behind artifact fit; replaces pending 4163 |
-| `jlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_jlens_lora_legacy.jsonc` | `fed3cb2` | 4172 | queued behind artifact fit; replaces pending 4164 |
-| `symjlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_symjlens_lora_legacy.jsonc` | `db69357` | 4170 | dependency on corrected student-lens job 4166; replaces 4165 |
+| `symjlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_symjlens_full_legacy.jsonc` | `810ab6f` | 4169 | stable; step-150 acc 0.7900; replaces 4162 |
+| `logitlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_logitlens_lora_legacy.jsonc` | `3c32077` | 4171 | stable; step-250 acc 0.7733; replaces pending 4163 |
+| `jlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_jlens_lora_legacy.jsonc` | `fed3cb2` | 4172 | stable; step-250 acc 0.7801; replaces pending 4164 |
+| `symjlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_symjlens_lora_legacy.jsonc` | `db69357` | 4170 | stable; step-50 acc 0.7574; replaces 4165 |
 
 ## Monitoring
 
@@ -107,6 +107,11 @@ At the 2026-07-12 00:23 HKT checkpoint, jobs 4144-4147 and 4153/4154 occupied al
 12 available A800s on nodes 1/2. Their five-minute GPU averages were 57-88% util
 and 200-351 W; no allocated GPU was idling near 100 W. Nine fit/train jobs remained
 queued behind them, including all six triggered legacy runs.
+
+At 01:27 HKT, jobs 4167-4172 again occupied all 12 usable A800s. Five-minute
+averages over their allocated devices were 49-99% utilization and 198-331 W;
+the four unallocated GPUs on node 2 remained near 60 W. There was no allocated
+idle card, and every freed two-GPU slot had immediately admitted the next job.
 
 ## Launch incidents
 
@@ -133,7 +138,9 @@ curves, because the comparison was underweighted. Jobs 4153/4154 use 1.94, whose
 initial absolute contribution (0.0476) lies between B (0.0310) and C (0.0589).
 The corrected step-50 accuracies are 0.7885 (full) and 0.7748 (LoRA), both up
 from 0.7475 with finite losses and gradient norms. Their step-100 accuracies are
-0.7824 and 0.7741; D-full reaches 0.8089 at step 150.
+0.7824 and 0.7741; D-full reaches 0.8089 at step 150. D-LoRA finishes successfully
+at 0.7718 on step 300, with final base 0.03088, raw MSE 0.01076, total loss
+0.05174, and gradient norm 0.0766.
 
 The archaeological audit also found two token-semantics regressions. B/C/E had
 sampled a different capped token subset for every layer, while D ignored the
@@ -169,10 +176,11 @@ launch commits and the corrected dependency.
 Current E-full job 4167 loads the merged artifact successfully. Its first update is
 finite: base 0.03733, raw auxiliary 4.8195, weighted auxiliary/base ratio 1.29x,
 and gradient norm 0.8477. This lies between the stable B/C scale rather than the
-failed 0.1-pilot regime; the job remains gated on its first scheduled evaluation.
+failed 0.1-pilot regime; its step-50 accuracy is 0.7900, up from 0.7475.
 E-LoRA job 4168 is likewise finite: at step 11 its base is 0.03511, raw auxiliary
 4.8686, weighted auxiliary/base ratio 1.39x, and gradient norm 0.0676. Under the
-legacy full profile, E reaches 0.7817 at step 50 from the common 0.7475 start.
+legacy full profile, E reaches 0.7817/0.7885/0.7900 at steps 50/100/150 from the
+common 0.7475 start; legacy E-LoRA reaches 0.7574 at step 50.
 
 ## Archaeological setting audit
 
