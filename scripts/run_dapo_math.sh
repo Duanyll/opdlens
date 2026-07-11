@@ -21,4 +21,4 @@ cd "$REPO"
 srun --container-workdir="$REPO" \
   /usr/bin/env PYTHONPATH="$SNAPSHOT" OPDLENS_EXPERIMENT_COMMIT="$COMMIT" \
   uv run --project "$REPO" --no-sync \
-  opdlens launch "$SNAPSHOT/$CONFIG"
+  python -P -m opdlens.scripts.cli launch "$SNAPSHOT/$CONFIG"
