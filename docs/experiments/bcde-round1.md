@@ -56,7 +56,8 @@ The fallback trigger fired on the current C-full run at both required checkpoint
 At step 100, C scored 0.7619 versus logits-full 0.8165, a 0.0546 gap versus a
 two-pooled-SE threshold of 0.0317. At step 200, C scored 0.8014 versus 0.8332, a
 0.03184 gap versus a threshold of 0.03008. The legacy matrix was therefore
-appended as jobs 4160-4165; the current matrix remains running and is not replaced.
+appended; B/C are jobs 4160/4161/4163/4164 and the E replacements are 4169/4170.
+The current matrix remains running and is not replaced.
 
 ## Offline artifacts
 
@@ -65,7 +66,7 @@ appended as jobs 4160-4165; the current matrix remains running and is not replac
 | `/gdata/users/duanyll/jlens/qwen3p5_9b_v2/lens.pt` | teacher Jacobian, 264 prompts | ready |
 | `/gdata/users/duanyll/jlens/qwen3p5_bridge/bridge.pt` | per-layer 9B->2B bridge | ready |
 | `/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens.pt` | student Jacobian, raw questions | superseded; calibration mismatch |
-| `/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens-cot.pt` | student Jacobian, 264 question+gold-CoT chats | queued two-GPU sharded refit, job 4155 |
+| `/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens-cot.pt` | student Jacobian, 264 question+gold-CoT chats | queued two-GPU sharded refit, job 4166; resumes 40/72 completed shard prompts from 4150/4155 |
 
 ## Run ledger
 
@@ -75,20 +76,20 @@ The same commit is also stored in the Slurm job comment.
 
 | Run | Profile | Config | Commit | Slurm job | State |
 |---|---|---|---|---|---|
-| `logitlens-full-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_logitlens_full_aux0p01.jsonc` | `035832d` | 4144 | stable, running |
+| `logitlens-full-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_logitlens_full_aux0p01.jsonc` | `035832d` | 4144 | complete; step-300 acc 0.8052 |
 | `logitlens-lora-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_logitlens_lora_aux0p01.jsonc` | `72930be` | 4146 | stable, running |
 | `jlens-full-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_jlens_full_aux0p01.jsonc` | `02702c6` | 4145 | stable, running |
 | `jlens-lora-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_jlens_lora_aux0p01.jsonc` | `9755e55` | 4147 | stable, running |
 | `hiddenmse-full-aux1.94` | `current-hidden-shared` | `examples/gsm8k_round1_hiddenmse_full_aux1p94.jsonc` | `f3d3ff9` | 4153 | stable, running; replaces underweighted 4140 |
 | `hiddenmse-lora-aux1.94` | `current-hidden-shared` | `examples/gsm8k_round1_hiddenmse_lora_aux1p94.jsonc` | `d6fceee` | 4154 | stable, running; replaces underweighted 4141 |
-| `symjlens-full-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_full_aux0p01.jsonc` | `564f218` | 4158 | dependency on student-lens job 4155 |
-| `symjlens-lora-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_lora_aux0p01.jsonc` | `ada5396` | 4159 | dependency on student-lens job 4155 |
-| `logitlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_logitlens_full_legacy.jsonc` | `c17ca55` | 4160 | queued; triggered C-full fallback |
-| `jlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_jlens_full_legacy.jsonc` | `80b92c0` | 4161 | queued; triggered C-full fallback |
-| `symjlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_symjlens_full_legacy.jsonc` | `8dc8dd8` | 4162 | dependency on student-lens job 4155 |
+| `symjlens-full-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_full_aux0p01.jsonc` | `4476408` | 4167 | dependency on corrected student-lens job 4166; replaces 4158 |
+| `symjlens-lora-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_lora_aux0p01.jsonc` | `ce66f87` | 4168 | dependency on corrected student-lens job 4166; replaces 4159 |
+| `logitlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_logitlens_full_legacy.jsonc` | `c17ca55` | 4160 | running; triggered C-full fallback |
+| `jlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_jlens_full_legacy.jsonc` | `80b92c0` | 4161 | running; triggered C-full fallback |
+| `symjlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_symjlens_full_legacy.jsonc` | `810ab6f` | 4169 | dependency on corrected student-lens job 4166; replaces 4162 |
 | `logitlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_logitlens_lora_legacy.jsonc` | `55dddaf` | 4163 | queued; triggered C-full fallback |
 | `jlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_jlens_lora_legacy.jsonc` | `a347715` | 4164 | queued; triggered C-full fallback |
-| `symjlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_symjlens_lora_legacy.jsonc` | `89d8387` | 4165 | dependency on student-lens job 4155 |
+| `symjlens-lora-legacy` | `legacy-bce-lora-hybrid` | `examples/gsm8k_round1_symjlens_lora_legacy.jsonc` | `db69357` | 4170 | dependency on corrected student-lens job 4166; replaces 4165 |
 
 ## Monitoring
 
@@ -150,9 +151,13 @@ E will only launch after that artifact succeeds.
 The first two-GPU replacement fit, job 4150, exposed a Slurm-step resource bug:
 shard 0 occupied the non-GPU resources of the allocation and shard 1 waited while
 GPU 1 sat idle. It and dependent jobs 4151/4152 were cancelled. Commit `e49dc8b`
-adds exact per-step CPU/memory requests; replacement fit 4155 gates E jobs
-4158/4159. Jobs 4156/4157 were dependency-pending and used no GPU; they were
-replaced so the E launch commits contain the new explicit compatibility knobs.
+added exact per-step CPU/memory requests, but job 4155 revealed a second inherited
+TRES issue: each step still recorded the job-level `TresPerStep=gres/gpu:2`, so the
+first shard blocked the second while GPU 5 remained at about 65 W. The atomic fit
+checkpoints retained 40 and 72 completed prompts. Commit `e853660` explicitly sets
+both `--gpus=1` and `--gpus-per-task=1` per shard; job 4166 resumes them. Pending E
+jobs 4158/4159/4162/4165 consumed no GPU and were replaced by 4167-4170 with fresh
+launch commits and the corrected dependency.
 
 ## Archaeological setting audit
 
