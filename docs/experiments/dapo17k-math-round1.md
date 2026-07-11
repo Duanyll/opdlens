@@ -186,6 +186,14 @@ failed fast during initialization. Jobs 4208-4217 never reached evaluation or th
 chunked loss. The replacement raises the fraction to 0.20, which remains 4 GiB
 below the original reservation while clearing this deterministic cache threshold.
 
+One 0.20 job, B-full 4220, then failed alone while five peers initialized. Both
+ranks reported `OSError: Stale file handle` while reading the shared NFS
+TorchInductor cache, followed by `FXGraphCacheMiss`; this is a compile-cache race,
+not a model/config failure. The DAPO runner now gives each Slurm job a node-local
+`/tmp` root for both vLLM and TorchInductor caches. Already initialized jobs are
+retained; the failed B-full and jobs that had not yet started are replaced under
+the cache-isolated runner.
+
 ### Chunk256 / vLLM 0.20 replacements
 
 | Run | Config | Commit | Slurm job | State |
