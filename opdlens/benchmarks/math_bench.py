@@ -42,7 +42,11 @@ class MathVerifyBenchmark(BaseBenchmark):
         from math_verify import parse, verify
 
         try:
-            return bool(verify(parse(gold), parse(completion)))
+            # Dataset golds are bare expressions, while math_verify's default
+            # extractor expects an answer anchor for many LaTeX forms. Give the
+            # reference the same unambiguous boxed envelope requested from models.
+            reference = self.extract_answer(gold)
+            return bool(verify(parse(f"\\boxed{{{reference}}}"), parse(completion)))
         except Exception:
             return False
 

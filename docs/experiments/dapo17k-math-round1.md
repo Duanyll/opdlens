@@ -16,6 +16,10 @@ round-one matrix. No DAPO/MATH training job has been submitted yet.
 - Both sides use the same zero-shot math system prompt and `math_verify` symbolic
   grader. Gold extraction succeeds for all 5,000 MATH test solutions, including the
   small number that use `\fbox` rather than `\boxed`.
+- Bare reference expressions must be placed in an unambiguous boxed envelope before
+  `math_verify.parse`: the previous direct parse self-graded only 3,957/5,000 golds.
+  The corrected grader self-grades 5,000/5,000, including intervals, complex values,
+  multi-answer sets, and `\dfrac` forms.
 - Both pinned datasets have been loaded once and verified under
   `HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1`, matching the batch-job environment.
 

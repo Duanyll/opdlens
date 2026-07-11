@@ -24,6 +24,9 @@ def test_gsm8k_extract_prefers_boxed_then_hash():
 def test_math500_grade_symbolic():
     m = parse_benchmark({"type": "math500"})
     assert m.grade("so the answer is \\boxed{\\frac{1}{2}}", "\\frac{1}{2}")
+    assert m.grade("\\boxed{x \\in [-2,7]}", "x \\in [-2,7]")
+    assert m.grade("\\boxed{4,6,14,15}", "4,6,14,15")
+    assert m.grade("\\boxed{i}", "i")
     assert not m.grade("\\boxed{\\frac{1}{3}}", "\\frac{1}{2}")
 
 
