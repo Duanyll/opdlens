@@ -87,8 +87,8 @@ The same commit is also stored in the Slurm job comment.
 | `jlens-lora-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_jlens_lora_aux0p01.jsonc` | `9755e55` | 4147 | complete; step-300 acc 0.7604 |
 | `hiddenmse-full-aux1.94` | `current-hidden-shared` | `examples/gsm8k_round1_hiddenmse_full_aux1p94.jsonc` | `f3d3ff9` | 4153 | complete; step-300 acc 0.8052; replaces underweighted 4140 |
 | `hiddenmse-lora-aux1.94` | `current-hidden-shared` | `examples/gsm8k_round1_hiddenmse_lora_aux1p94.jsonc` | `d6fceee` | 4154 | complete; step-300 acc 0.7718; replaces underweighted 4141 |
-| `symjlens-full-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_full_aux0p01.jsonc` | `4476408` | 4167 | stable, running; step-150 acc 0.8036; replaces 4158 |
-| `symjlens-lora-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_lora_aux0p01.jsonc` | `ce66f87` | 4168 | stable, running; step-100 acc 0.7976; replaces 4159 |
+| `symjlens-full-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_full_aux0p01.jsonc` | `4476408` | 4167 | stable, running; step-200 acc 0.8234; replaces 4158 |
+| `symjlens-lora-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_lora_aux0p01.jsonc` | `ce66f87` | 4168 | stable, running; step-200 acc 0.7748; replaces 4159 |
 | `logitlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_logitlens_full_legacy.jsonc` | `c17ca55` | 4160 | complete; step-300 acc 0.7801 |
 | `jlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_jlens_full_legacy.jsonc` | `80b92c0` | 4161 | complete; step-300 acc 0.7733 |
 | `symjlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_symjlens_full_legacy.jsonc` | `810ab6f` | 4169 | complete; step-300 acc 0.8014; replaces 4162 |
@@ -118,6 +118,12 @@ devices (node 2 GPUs 0-1 and node 1 GPUs 4-5) averaged 46-79% utilization,
 207-288 W, and 71-76 GiB allocated memory over five minutes. Both jobs continued
 to advance with finite metrics; the DAPO17K/MATH matrix remained queued behind
 their all-successful GSM8K dependency gate.
+
+At 02:40 HKT, E-full had reached train step 247 and E-LoRA step 202. Their four
+allocated GPUs averaged 65-81% utilization, 240-345 W, and 72-76 GiB over five
+minutes. All current losses and gradients remained finite, no Trackio alerts were
+present, and LoRA checkpoints 50/100/150/200 all existed. Barrier 4175 still
+depended only on these two jobs, with all ten DAPO17K/MATH jobs queued behind it.
 
 ## Launch incidents
 
@@ -209,13 +215,15 @@ Current E-full job 4167 loads the merged artifact successfully. Its first update
 finite: base 0.03733, raw auxiliary 4.8195, weighted auxiliary/base ratio 1.29x,
 and gradient norm 0.8477. This lies between the stable B/C scale rather than the
 failed 0.1-pilot regime. Its fixed-step curve is 0.7475/0.7900/0.8059/0.8036 at
-steps 0/50/100/150. At training step 164, base 0.02283, raw auxiliary 1.3870,
-total loss 0.03670, and gradient norm 0.3164 are all finite.
+steps 0/50/100/150, then rises to 0.8234 at step 200. At training step 247, base
+0.02383, raw auxiliary 1.3835, total loss 0.03766, and gradient norm 0.2373 are all
+finite.
 E-LoRA job 4168 is likewise finite: at step 11 its base is 0.03511, raw auxiliary
 4.8686, weighted auxiliary/base ratio 1.39x, and gradient norm 0.0676. Its
-fixed-step curve is 0.7475/0.7741/0.7976 at steps 0/50/100; step 131 remains
-finite with base 0.03281, raw auxiliary 2.2225, total loss 0.05503, and gradient
-norm 0.0841.
+fixed-step curve is 0.7475/0.7741/0.7976/0.7779/0.7748 at steps
+0/50/100/150/200. The post-100 decline remains above initialization and is not a
+collapse. Step 202 remains finite with base 0.02615, raw auxiliary 1.9920, total
+loss 0.04607, and gradient norm 0.0838.
 
 Both legacy E jobs completed successfully. Legacy E-full reaches
 0.7475/0.7817/0.7885/0.7900/0.7930/0.7892/0.8014 at steps
