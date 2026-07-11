@@ -10,13 +10,17 @@ from .base import BaseBenchmark
 from .gsm8k import Gsm8kBenchmark
 from .math_bench import (
     AimeBenchmark,
+    DapoMathBenchmark,
     Math500Benchmark,
+    MathBenchmark,
     MathTrainBenchmark,
     MathVerifyBenchmark,
 )
 
 Benchmark = Annotated[
     Annotated[Gsm8kBenchmark, Tag("gsm8k")]
+    | Annotated[DapoMathBenchmark, Tag("dapo_math")]
+    | Annotated[MathBenchmark, Tag("math")]
     | Annotated[Math500Benchmark, Tag("math500")]
     | Annotated[AimeBenchmark, Tag("aime")]
     | Annotated[MathTrainBenchmark, Tag("math_train")],
@@ -35,7 +39,9 @@ __all__ = [
     "AimeBenchmark",
     "BaseBenchmark",
     "Benchmark",
+    "DapoMathBenchmark",
     "Gsm8kBenchmark",
+    "MathBenchmark",
     "Math500Benchmark",
     "MathTrainBenchmark",
     "MathVerifyBenchmark",

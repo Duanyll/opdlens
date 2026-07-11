@@ -130,6 +130,137 @@
       "title": "AimeBenchmark",
       "type": "object"
     },
+    "DapoMathBenchmark": {
+      "additionalProperties": false,
+      "description": "Deduplicated DAPO-Math-17k training prompts (17,398 rows).",
+      "properties": {
+        "type": {
+          "const": "dapo_math",
+          "default": "dapo_math",
+          "title": "Type",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "hf_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "open-r1/DAPO-Math-17k-Processed",
+          "title": "Hf Id"
+        },
+        "hf_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "all",
+          "title": "Hf Name"
+        },
+        "split": {
+          "default": "train",
+          "title": "Split",
+          "type": "string"
+        },
+        "question_key": {
+          "default": "prompt",
+          "title": "Question Key",
+          "type": "string"
+        },
+        "answer_key": {
+          "default": "solution",
+          "title": "Answer Key",
+          "type": "string"
+        },
+        "max_samples": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Samples"
+        },
+        "system_prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "Solve the following problem step by step. Put your final answer within \\boxed{}.",
+          "title": "System Prompt"
+        },
+        "answer_instruction": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Answer Instruction"
+        },
+        "few_shot_num": {
+          "default": 0,
+          "title": "Few Shot Num",
+          "type": "integer"
+        },
+        "eval_temperature": {
+          "default": 0.6,
+          "title": "Eval Temperature",
+          "type": "number"
+        },
+        "eval_top_p": {
+          "default": 1.0,
+          "title": "Eval Top P",
+          "type": "number"
+        },
+        "eval_max_tokens": {
+          "default": 1024,
+          "title": "Eval Max Tokens",
+          "type": "integer"
+        },
+        "avg_k": {
+          "default": 8,
+          "title": "Avg K",
+          "type": "integer"
+        },
+        "hf_revision": {
+          "default": "31dd309567e3da778038cc87d868b6097a3ccf68",
+          "title": "Hf Revision",
+          "type": "string"
+        }
+      },
+      "title": "DapoMathBenchmark",
+      "type": "object"
+    },
     "Gsm8kBenchmark": {
       "additionalProperties": false,
       "properties": {
@@ -747,6 +878,162 @@
       "title": "Math500Benchmark",
       "type": "object"
     },
+    "MathBenchmark": {
+      "additionalProperties": false,
+      "description": "Canonical Hendrycks MATH test, aggregated across all seven subjects.",
+      "properties": {
+        "type": {
+          "const": "math",
+          "default": "math",
+          "title": "Type",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "hf_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "EleutherAI/hendrycks_math",
+          "title": "Hf Id"
+        },
+        "hf_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hf Name"
+        },
+        "split": {
+          "default": "test",
+          "title": "Split",
+          "type": "string"
+        },
+        "question_key": {
+          "default": "problem",
+          "title": "Question Key",
+          "type": "string"
+        },
+        "answer_key": {
+          "default": "solution",
+          "title": "Answer Key",
+          "type": "string"
+        },
+        "max_samples": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Samples"
+        },
+        "system_prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "Solve the following problem step by step. Put your final answer within \\boxed{}.",
+          "title": "System Prompt"
+        },
+        "answer_instruction": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Answer Instruction"
+        },
+        "few_shot_num": {
+          "default": 0,
+          "title": "Few Shot Num",
+          "type": "integer"
+        },
+        "eval_temperature": {
+          "default": 0.6,
+          "title": "Eval Temperature",
+          "type": "number"
+        },
+        "eval_top_p": {
+          "default": 1.0,
+          "title": "Eval Top P",
+          "type": "number"
+        },
+        "eval_max_tokens": {
+          "default": 1024,
+          "title": "Eval Max Tokens",
+          "type": "integer"
+        },
+        "avg_k": {
+          "default": 8,
+          "title": "Avg K",
+          "type": "integer"
+        },
+        "hf_revision": {
+          "default": "21a5633873b6a120296cce3e2df9d5550074f4a3",
+          "title": "Hf Revision",
+          "type": "string"
+        },
+        "subjects": {
+          "default": [
+            "algebra",
+            "counting_and_probability",
+            "geometry",
+            "intermediate_algebra",
+            "number_theory",
+            "prealgebra",
+            "precalculus"
+          ],
+          "items": {
+            "enum": [
+              "algebra",
+              "counting_and_probability",
+              "geometry",
+              "intermediate_algebra",
+              "number_theory",
+              "prealgebra",
+              "precalculus"
+            ],
+            "type": "string"
+          },
+          "title": "Subjects",
+          "type": "array"
+        }
+      },
+      "title": "MathBenchmark",
+      "type": "object"
+    },
     "MathTrainBenchmark": {
       "additionalProperties": false,
       "properties": {
@@ -1124,7 +1411,9 @@
         "discriminator": {
           "mapping": {
             "aime": "#/$defs/AimeBenchmark",
+            "dapo_math": "#/$defs/DapoMathBenchmark",
             "gsm8k": "#/$defs/Gsm8kBenchmark",
+            "math": "#/$defs/MathBenchmark",
             "math500": "#/$defs/Math500Benchmark",
             "math_train": "#/$defs/MathTrainBenchmark"
           },
@@ -1133,6 +1422,12 @@
         "oneOf": [
           {
             "$ref": "#/$defs/Gsm8kBenchmark"
+          },
+          {
+            "$ref": "#/$defs/DapoMathBenchmark"
+          },
+          {
+            "$ref": "#/$defs/MathBenchmark"
           },
           {
             "$ref": "#/$defs/Math500Benchmark"
@@ -1164,7 +1459,9 @@
       "discriminator": {
         "mapping": {
           "aime": "#/$defs/AimeBenchmark",
+          "dapo_math": "#/$defs/DapoMathBenchmark",
           "gsm8k": "#/$defs/Gsm8kBenchmark",
+          "math": "#/$defs/MathBenchmark",
           "math500": "#/$defs/Math500Benchmark",
           "math_train": "#/$defs/MathTrainBenchmark"
         },
@@ -1173,6 +1470,12 @@
       "oneOf": [
         {
           "$ref": "#/$defs/Gsm8kBenchmark"
+        },
+        {
+          "$ref": "#/$defs/DapoMathBenchmark"
+        },
+        {
+          "$ref": "#/$defs/MathBenchmark"
         },
         {
           "$ref": "#/$defs/Math500Benchmark"
