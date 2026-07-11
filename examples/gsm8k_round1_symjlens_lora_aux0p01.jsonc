@@ -35,7 +35,7 @@
       24
     ],
     "temperature": 1.0,
-    "student_jacobian_path": "/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens.pt",
+    "student_jacobian_path": "/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens-cot.pt",
     "teacher_jacobian_path": "/gdata/users/duanyll/jlens/qwen3p5_9b_v2/lens.pt"
   },
   "base_beta": 0.5,
