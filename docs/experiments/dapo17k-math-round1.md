@@ -97,7 +97,9 @@ pass.
 
 At 02:36 HKT, every final ledger commit contains `5cd4f5c`; its config blob is
 byte-identical to the checked-in config and its commit/run pair matches the Slurm
-job comment. All ten jobs are dependency-blocked on barrier 4175.
+job comment. Slurm's stored batch scripts for the first and last matrix jobs also
+contain both safe-path controls, proving the submitted scripts captured the fix.
+All ten jobs are dependency-blocked on barrier 4175.
 
 ## Launch gates
 
