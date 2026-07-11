@@ -60,3 +60,12 @@ checked every 30 minutes, relaxed to hourly only after sustained healthy behavio
 Jobs 4128-4133 exited before Python startup because Slurm resolved `env` to a
 non-executable user-local path. No model or dataset state was touched. The launcher
 now invokes `/usr/bin/env` explicitly; replacement jobs are recorded in the ledger.
+
+The initial B/C/E configs used the example-arm weight 0.1. At step 50,
+`logitlens-full` fell from 0.7475 to 0.5838 while `hiddenmse-full` reached 0.8287.
+The raw vocab-KL auxiliary was about 3.1 for B and 5.9 for C versus a base loss
+near 0.037, so weight 0.1 made it dominate optimization. B/C/E replacements use
+the previously exercised jlens CoT weight 0.01 and a distinct `-aux0.01` run name;
+the failed pilots remain in Trackio as diagnostic evidence. D remains at 0.1
+because its initial weighted contribution was only about 0.0025 and its curve is
+healthy.
