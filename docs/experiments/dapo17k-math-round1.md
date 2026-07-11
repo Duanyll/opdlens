@@ -199,13 +199,13 @@ the cache-isolated runner.
 
 | Run | Config | Commit | Slurm job | State |
 |---|---|---|---|---|
-| `logits-full-chunk256vllm020` | `examples/dapo17k_math_round1_logits_full.jsonc` | `43f62df` | 4218 | stable through step 97; replaces 4208 |
-| `logits-lora-chunk256vllm020` | `examples/dapo17k_math_round1_logits_lora.jsonc` | `408ab83` | 4219 | stable through step 92; replaces 4209 |
+| `logits-full-chunk256vllm020` | `examples/dapo17k_math_round1_logits_full.jsonc` | `43f62df` | 4218 | stable at step 133; step-100 acc 0.6660; replaces 4208 |
+| `logits-lora-chunk256vllm020` | `examples/dapo17k_math_round1_logits_lora.jsonc` | `408ab83` | 4219 | stable at step 125; step-100 acc 0.6638; replaces 4209 |
 | `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `8ae5a7f` | 4220 | failed in shared NFS compile cache; replaces 4210 |
-| `logitlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_lora.jsonc` | `fad5d85` | 4221 | stable through step 86; replaces 4211 |
-| `jlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_jlens_full.jsonc` | `91a0d43` | 4222 | stable through step 85; replaces 4212 |
-| `jlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_jlens_lora.jsonc` | `e94f206` | 4223 | stable through step 81; replaces 4213 |
-| `hiddenmse-full-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_full.jsonc` | `99ac47c` | 4224 | stable through step 95; replaces 4214 |
+| `logitlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_lora.jsonc` | `fad5d85` | 4221 | stable at step 119; step-100 acc 0.6426; replaces 4211 |
+| `jlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_jlens_full.jsonc` | `91a0d43` | 4222 | stable at step 117; step-100 acc 0.6400; replaces 4212 |
+| `jlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_jlens_lora.jsonc` | `e94f206` | 4223 | stable at step 112; step-100 acc 0.6290; replaces 4213 |
+| `hiddenmse-full-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_full.jsonc` | `99ac47c` | 4224 | stable at step 130; step-100 acc 0.6242; replaces 4214 |
 | `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `8ece700` | 4225 | cancelled before start for cache-isolated replacement |
 | `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `cc143ee` | 4226 | cancelled before start for cache-isolated replacement |
 | `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `200715c` | 4227 | cancelled before start for cache-isolated replacement |
@@ -252,3 +252,12 @@ ratios continue to settle at 0.46x for B-LoRA, 0.71x/0.88x for C-full/LoRA, and
 0.59x for D-full. No alert or new error is present. The 12 GPUs average 92-100%
 utilization and 284-379 W over five minutes. The first step-100 evaluations have
 not yet completed, and jobs 4228-4231 remain ready to fill the next released slots.
+
+At 05:48 HKT, all six step-100 evaluations and checkpoints were complete. From
+the common 0.6454 initialization, A-full/A-LoRA reach 0.6660/0.6638, B-LoRA
+0.6426, C-full/C-LoRA 0.6400/0.6290, and D-full 0.6242. D is currently worst as
+anticipated; the largest decline is 2.12 percentage points, below the 5-point
+collapse threshold. Training resumed to step 112-133 with all metrics finite;
+latest weighted auxiliary/base ratios are 0.47x for B, 0.66x/0.87x for C, and
+0.58x for D. The 12 GPUs average 95-100% utilization and 318-393 W over five
+minutes, while the four recorded replacement jobs remain queued.
