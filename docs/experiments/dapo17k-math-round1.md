@@ -1,7 +1,8 @@
 # DAPO17K to MATH round 1
 
-Status: configs prepared and validated; launch is gated on completion of the GSM8K
-round-one matrix. No DAPO/MATH training job has been submitted yet.
+Status: all ten experiments are submitted behind GSM8K barrier job 4175. They are
+present in the queue but cannot consume GPUs until every remaining GSM8K current
+and triggered-legacy job exits successfully.
 
 ## Dataset identity
 
@@ -59,8 +60,8 @@ non-finite.
 
 The teacher lens and bridge are model/layer artifacts and are kept identical across
 datasets, as in the earlier MATH pivot. Refitting them only for DAPO would change the
-arm definition at the same time as the dataset. E instead waits for the matched
-student lens from GSM8K job 4155; its teacher and student lenses are fit on the same
+arm definition at the same time as the dataset. E uses the matched student lens
+completed by GSM8K job 4166; its teacher and student lenses are fit on the same
 264 gold-CoT chats, fixing the cross-side calibration mismatch found in the first E
 attempt.
 
@@ -68,7 +69,7 @@ attempt.
 |---|---|---|
 | `/gdata/users/duanyll/jlens/qwen3p5_9b_v2/lens.pt` | C/E teacher lens | ready |
 | `/gdata/users/duanyll/jlens/qwen3p5_bridge/bridge.pt` | D per-layer bridge | ready |
-| `/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens-cot.pt` | E student lens | job 4155 pending |
+| `/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens-cot.pt` | E student lens | ready; 264 prompts, finite 2048x2048 layers 6/12/18 |
 
 ## Structural guardrail
 
@@ -79,11 +80,14 @@ full-MATH protocol, two-GPU allocation, and LoRA checkpoint policy are also pinn
 
 ## Launch gates
 
-1. All GSM8K current and triggered-legacy jobs finish or have a documented terminal
-   replacement; the DAPO jobs must not displace that matrix.
-2. Student-lens job 4155 succeeds and the artifact passes layer/shape loading.
-3. Arm A establishes step-0 MATH runtime and score without truncation/OOM; the batch
-   wall time is adjusted before the remaining matrix is submitted if needed.
+1. All GSM8K current and triggered-legacy jobs finish successfully. Slurm barrier
+   4175 encodes `afterok` dependencies on jobs
+   4154/4160/4161/4167/4168/4169/4170/4171/4172; every DAPO job depends only on
+   that barrier, so none can displace the GSM8K matrix.
+2. The matched student lens is complete and has passed layer/shape/finite loading.
+3. Arm A establishes step-0 MATH runtime and score without truncation/OOM. If the
+   24-hour estimate is inadequate, all still-initializing matrix jobs are cancelled
+   and replaced before accepting any trained checkpoint.
 4. B/C/D/E pass the first-update auxiliary-scale and finite-gradient checks.
 5. Every launch receives its own pre-launch commit, immutable snapshot, Slurm comment,
    and ledger row. GPU util/power is checked after startup.
@@ -92,13 +96,13 @@ full-MATH protocol, two-GPU allocation, and LoRA checkpoint policy are also pinn
 
 | Run | Config | Commit | Slurm job | State |
 |---|---|---|---|---|
-| `logits-full` | `examples/dapo17k_math_round1_logits_full.jsonc` | pending | pending | GSM8K gate |
-| `logits-lora` | `examples/dapo17k_math_round1_logits_lora.jsonc` | pending | pending | GSM8K gate |
-| `logitlens-full` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | pending | pending | GSM8K gate |
-| `logitlens-lora` | `examples/dapo17k_math_round1_logitlens_lora.jsonc` | pending | pending | GSM8K gate |
-| `jlens-full` | `examples/dapo17k_math_round1_jlens_full.jsonc` | pending | pending | GSM8K gate |
-| `jlens-lora` | `examples/dapo17k_math_round1_jlens_lora.jsonc` | pending | pending | GSM8K gate |
-| `hiddenmse-full` | `examples/dapo17k_math_round1_hiddenmse_full.jsonc` | pending | pending | GSM8K gate |
-| `hiddenmse-lora` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | pending | pending | GSM8K gate |
-| `symjlens-full` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | pending | pending | GSM8K + artifact gate |
-| `symjlens-lora` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | pending | pending | GSM8K + artifact gate |
+| `logits-full` | `examples/dapo17k_math_round1_logits_full.jsonc` | `c73a326` | 4176 | dependency on barrier 4175 |
+| `logits-lora` | `examples/dapo17k_math_round1_logits_lora.jsonc` | `4cd0046` | 4177 | dependency on barrier 4175 |
+| `logitlens-full` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `1b79fd4` | 4178 | dependency on barrier 4175 |
+| `logitlens-lora` | `examples/dapo17k_math_round1_logitlens_lora.jsonc` | `6d9bafc` | 4179 | dependency on barrier 4175 |
+| `jlens-full` | `examples/dapo17k_math_round1_jlens_full.jsonc` | `8e3048e` | 4180 | dependency on barrier 4175 |
+| `jlens-lora` | `examples/dapo17k_math_round1_jlens_lora.jsonc` | `769c3f7` | 4181 | dependency on barrier 4175 |
+| `hiddenmse-full` | `examples/dapo17k_math_round1_hiddenmse_full.jsonc` | `262c17c` | 4182 | dependency on barrier 4175 |
+| `hiddenmse-lora` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `b143418` | 4183 | dependency on barrier 4175 |
+| `symjlens-full` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `a9c5ed8` | 4184 | dependency on barrier 4175 |
+| `symjlens-lora` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `074f0c8` | 4185 | dependency on barrier 4175 |
