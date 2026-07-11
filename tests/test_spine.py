@@ -84,6 +84,56 @@ def test_legacy_bce_profile_is_pinned():
             assert config["max_checkpoints"] == 0
 
 
+def test_dapo_math_matrix_shares_one_spine_and_validates():
+    for finetune in ("full", "lora"):
+        configs = {
+            arm: load_config_file(
+                str(_EXAMPLES / f"dapo17k_math_round1_{arm}_{finetune}.jsonc")
+            )
+            for arm in ("logits", "logitlens", "jlens", "hiddenmse", "symjlens")
+        }
+        for config in configs.values():
+            OpdTrainer(**config)
+
+        def spine(config: dict) -> dict:
+            return {
+                key: value
+                for key, value in config.items()
+                if key not in {"arm", "checkpoint_root", "experiment_name"}
+            }
+
+        baseline = spine(configs["logits"])
+        for arm in ("logitlens", "jlens", "hiddenmse", "symjlens"):
+            assert spine(configs[arm]) == baseline
+
+
+def test_dapo_math_matrix_protocol_is_pinned():
+    for finetune in ("full", "lora"):
+        config = load_config_file(
+            str(_EXAMPLES / f"dapo17k_math_round1_logits_{finetune}.jsonc")
+        )
+        train = config["train_benchmark"]
+        evaluation = config["eval_benchmarks"][0]
+        assert config["trackio_project"] == "opdlens-math"
+        assert train["type"] == "dapo_math"
+        assert train["hf_id"] == "open-r1/DAPO-Math-17k-Processed"
+        assert train["hf_revision"] == "31dd309567e3da778038cc87d868b6097a3ccf68"
+        assert evaluation["type"] == "math"
+        assert evaluation["hf_id"] == "EleutherAI/hendrycks_math"
+        assert evaluation["hf_revision"] == ("21a5633873b6a120296cce3e2df9d5550074f4a3")
+        assert len(evaluation["subjects"]) == 7
+        assert evaluation["eval_temperature"] == 0.0
+        assert evaluation["avg_k"] == 1
+        assert evaluation["eval_max_tokens"] == 2048
+        assert config["eval_max_samples"] is None
+        assert config["rollout_max_tokens"] == 2048
+        assert config["eval_steps"] == 100
+        assert config["launch"]["devices"] == 2
+        if finetune == "lora":
+            assert config["checkpoint_interval"] == config["eval_steps"]
+            assert config["max_checkpoints"] == 0
+
+
 def test_aux_weight_zero_gates_off_aux():
     # The trainer computes ``active_aux = arm.aux_weight != 0``; with aux_weight 0
     # every arm skips hidden capture + aux + its RNG use -> identical base OPD.
