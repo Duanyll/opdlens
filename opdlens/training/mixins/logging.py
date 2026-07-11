@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import os
 import secrets
 import time
 from collections.abc import Iterator, Mapping
@@ -60,6 +61,12 @@ class LoggingMixin(BaseTrainer):
     def init_tracker(self) -> None:
         if not self.is_main_process:
             return
+        # Keep trackio's store inside the project (runs/trackio) rather than the global
+        # ~/.cache/huggingface/trackio default. trackio reads TRACKIO_DIR at import time,
+        # so set it first; setdefault lets an explicit env override still win.
+        os.environ.setdefault(
+            "TRACKIO_DIR", str((Path(self.runs_root) / "trackio").resolve())
+        )
         import trackio
 
         self._run_dir = Path(self.runs_root) / self.experiment_name / str(self.run_id)
