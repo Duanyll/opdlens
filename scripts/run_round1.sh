@@ -19,6 +19,7 @@ git -C "$REPO" archive "$COMMIT" | tar -x -C "$SNAPSHOT"
 
 cd "$REPO"
 srun --container-workdir="$REPO" \
-  /usr/bin/env PYTHONPATH="$SNAPSHOT" OPDLENS_EXPERIMENT_COMMIT="$COMMIT" \
+  /usr/bin/env PYTHONSAFEPATH=1 PYTHONPATH="$SNAPSHOT" \
+  OPDLENS_EXPERIMENT_COMMIT="$COMMIT" \
   uv run --project "$REPO" --no-sync \
   python -P -m opdlens.scripts.cli launch "$SNAPSHOT/$CONFIG"

@@ -11,6 +11,7 @@ _ROOT = Path(__file__).parents[1]
 def test_runner_prevents_checkout_from_shadowing_snapshot(runner: str) -> None:
     script = (_ROOT / "scripts" / runner).read_text(encoding="utf-8")
 
+    assert "PYTHONSAFEPATH=1" in script
     assert 'PYTHONPATH="$SNAPSHOT"' in script
     assert "python -P -m opdlens.scripts.cli launch" in script
     assert "  opdlens launch" not in script
