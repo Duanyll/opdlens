@@ -88,7 +88,7 @@ The same commit is also stored in the Slurm job comment.
 | `hiddenmse-full-aux1.94` | `current-hidden-shared` | `examples/gsm8k_round1_hiddenmse_full_aux1p94.jsonc` | `f3d3ff9` | 4153 | complete; step-300 acc 0.8052; replaces underweighted 4140 |
 | `hiddenmse-lora-aux1.94` | `current-hidden-shared` | `examples/gsm8k_round1_hiddenmse_lora_aux1p94.jsonc` | `d6fceee` | 4154 | complete; step-300 acc 0.7718; replaces underweighted 4141 |
 | `symjlens-full-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_full_aux0p01.jsonc` | `4476408` | 4167 | complete; step-300 acc 0.8211; replaces 4158 |
-| `symjlens-lora-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_lora_aux0p01.jsonc` | `ce66f87` | 4168 | stable, running; step-250 acc 0.7771; replaces 4159 |
+| `symjlens-lora-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_lora_aux0p01.jsonc` | `ce66f87` | 4168 | complete; step-300 acc 0.7832; replaces 4159 |
 | `logitlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_logitlens_full_legacy.jsonc` | `c17ca55` | 4160 | complete; step-300 acc 0.7801 |
 | `jlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_jlens_full_legacy.jsonc` | `80b92c0` | 4161 | complete; step-300 acc 0.7733 |
 | `symjlens-full-legacy` | `legacy-bce-full` | `examples/gsm8k_round1_symjlens_full_legacy.jsonc` | `810ab6f` | 4169 | complete; step-300 acc 0.8014; replaces 4162 |
@@ -132,6 +132,13 @@ total loss, learning rate, and gradient norm remained finite, and checkpoints
 utilization, 248-257 W, and 75-76 GiB over five minutes. No Trackio alerts were
 present. Barrier 4175 and all ten DAPO17K/MATH jobs remained correctly blocked
 on the still-running E-LoRA job.
+
+At 03:40 HKT, E-LoRA had completed successfully at 0.7832 on step 300 with all
+six eval checkpoints retained. Its final base 0.02940, raw auxiliary 1.9806,
+total loss 0.04921, and gradient norm 0.0809 were finite. Barrier 4175 completed
+immediately afterward at 03:22:45, proving every retained GSM8K job succeeded and
+releasing the DAPO17K/MATH matrix. The first DAPO jobs then exposed a shared
+base-loss memory failure, documented separately in the DAPO/MATH ledger.
 
 ## Launch incidents
 
@@ -229,9 +236,9 @@ gradient norm 0.2236, all finite.
 E-LoRA job 4168 is likewise finite: at step 11 its base is 0.03511, raw auxiliary
 4.8686, weighted auxiliary/base ratio 1.39x, and gradient norm 0.0676. Its
 fixed-step curve is 0.7475/0.7741/0.7976/0.7779/0.7748/0.7771 at steps
-0/50/100/150/200/250. The post-100 decline remains above initialization and is
-not a collapse. Step 277 remains finite with base 0.02783, raw auxiliary 1.9836,
-total loss 0.04767, and gradient norm 0.0832.
+0/50/100/150/200/250, then recovers to 0.7832 at step 300. The post-100 decline
+remains above initialization and is not a collapse. It finishes with base 0.02940,
+raw auxiliary 1.9806, total loss 0.04921, and gradient norm 0.0809, all finite.
 
 Both legacy E jobs completed successfully. Legacy E-full reaches
 0.7475/0.7817/0.7885/0.7900/0.7930/0.7892/0.8014 at steps
