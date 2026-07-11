@@ -15,7 +15,7 @@ OUT=/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens-cot.pt
 mkdir -p "$OUT_DIR"
 
 cd "$REPO"
-srun --exclusive --ntasks=1 --gpus-per-task=1 --cpus-per-task=8 \
+srun --exclusive --exact --ntasks=1 --gpus-per-task=1 --cpus-per-task=8 --mem=60G \
   --container-workdir="$REPO" \
   uv run --project "$REPO" --no-sync -m opdlens.fit.fit_jlens \
   --model Qwen/Qwen3.5-2B \
@@ -26,7 +26,7 @@ srun --exclusive --ntasks=1 --gpus-per-task=1 --cpus-per-task=8 \
   --out "$OUT_DIR/shard0.pt" &
 shard0_pid=$!
 
-srun --exclusive --ntasks=1 --gpus-per-task=1 --cpus-per-task=8 \
+srun --exclusive --exact --ntasks=1 --gpus-per-task=1 --cpus-per-task=8 --mem=60G \
   --container-workdir="$REPO" \
   uv run --project "$REPO" --no-sync -m opdlens.fit.fit_jlens \
   --model Qwen/Qwen3.5-2B \
@@ -39,7 +39,7 @@ shard1_pid=$!
 
 wait "$shard0_pid"
 wait "$shard1_pid"
-srun --exclusive --ntasks=1 --gpus-per-task=1 --cpus-per-task=1 \
+srun --exclusive --exact --ntasks=1 --gpus-per-task=1 --cpus-per-task=1 --mem=4G \
   --container-workdir="$REPO" \
   uv run --project "$REPO" --no-sync -m opdlens.fit.merge_jlens \
   "$OUT_DIR/shard0.pt" "$OUT_DIR/shard1.pt" --out "$OUT"
