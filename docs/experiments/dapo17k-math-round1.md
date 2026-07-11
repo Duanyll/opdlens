@@ -2,9 +2,9 @@
 
 Status: GSM8K barrier 4175 completed successfully. The first ten DAPO/MATH jobs
 4198-4207 all established the same 0.6472 step-0 MATH baseline, then exposed a
-shared base-loss backward-memory failure before step 1. The memory-bounded
-replacement matrix is submitted as jobs 4208-4217 under distinct `-chunk256` run
-names; six jobs occupy all 12 available A800s and four remain queued.
+shared base-loss backward-memory failure before step 1. Jobs 4208-4217 then exposed
+a vLLM Mamba-cache startup threshold before evaluation. The adjusted memory-bounded
+profile is being requeued under distinct `-chunk256vllm020` run names.
 
 ## Dataset identity
 
@@ -44,7 +44,7 @@ MATH accuracy must be labelled partly in-distribution rather than a clean OOD sc
   limit admits every prompt plus the configured completion budget.
 - The replacement profile checkpoints the mathematically identical base-loss
   softmax graph in 256-token chunks, lowers only vLLM's operational GPU-memory
-  reservation from 0.25 to 0.18, and enables expandable CUDA allocator segments.
+  reservation from 0.25 to 0.20, and enables expandable CUDA allocator segments.
   `base_loss_chunk_size` defaults to zero, preserving the old monolithic path for
   every existing config. Dataset, sampling, loss, optimizer, batch, and 2,048-token
   completion cap are unchanged.
@@ -138,25 +138,26 @@ All ten jobs remained dependency-blocked until barrier 4175 completed at 03:22 H
 | `symjlens-full` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `45d5113` | 4206 | failed before step 1: same backward OOM |
 | `symjlens-lora` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `2a45abf` | 4207 | failed before step 1: same backward OOM |
 
-### Chunked-memory replacements
+### Chunk256 / vLLM 0.18 startup attempt
 
 | Run | Config | Commit | Slurm job | State |
 |---|---|---|---|---|
-| `logits-full-chunk256` | `examples/dapo17k_math_round1_logits_full.jsonc` | `00449a4` | 4208 | running; replaces 4198 |
-| `logits-lora-chunk256` | `examples/dapo17k_math_round1_logits_lora.jsonc` | `9ab65c4` | 4209 | running; replaces 4199 |
-| `logitlens-full-chunk256` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `c95322d` | 4210 | running; replaces 4200 |
-| `logitlens-lora-chunk256` | `examples/dapo17k_math_round1_logitlens_lora.jsonc` | `9bfd254` | 4211 | running; replaces 4201 |
-| `jlens-full-chunk256` | `examples/dapo17k_math_round1_jlens_full.jsonc` | `eb9d1bf` | 4212 | running; replaces 4202 |
-| `jlens-lora-chunk256` | `examples/dapo17k_math_round1_jlens_lora.jsonc` | `85c1e79` | 4213 | running; replaces 4203 |
-| `hiddenmse-full-chunk256` | `examples/dapo17k_math_round1_hiddenmse_full.jsonc` | `3fa5683` | 4214 | queued; replaces 4204 |
-| `hiddenmse-lora-chunk256` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `2a5c062` | 4215 | queued; replaces 4205 |
-| `symjlens-full-chunk256` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `36dd42b` | 4216 | queued; replaces 4206 |
-| `symjlens-lora-chunk256` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `8391803` | 4217 | queued; replaces 4207 |
+| `logits-full-chunk256` | `examples/dapo17k_math_round1_logits_full.jsonc` | `00449a4` | 4208 | failed during vLLM init; replaces 4198 |
+| `logits-lora-chunk256` | `examples/dapo17k_math_round1_logits_lora.jsonc` | `9ab65c4` | 4209 | failed during vLLM init; replaces 4199 |
+| `logitlens-full-chunk256` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `c95322d` | 4210 | failed during vLLM init; replaces 4200 |
+| `logitlens-lora-chunk256` | `examples/dapo17k_math_round1_logitlens_lora.jsonc` | `9bfd254` | 4211 | failed during vLLM init; replaces 4201 |
+| `jlens-full-chunk256` | `examples/dapo17k_math_round1_jlens_full.jsonc` | `eb9d1bf` | 4212 | failed during vLLM init; replaces 4202 |
+| `jlens-lora-chunk256` | `examples/dapo17k_math_round1_jlens_lora.jsonc` | `85c1e79` | 4213 | failed during vLLM init; replaces 4203 |
+| `hiddenmse-full-chunk256` | `examples/dapo17k_math_round1_hiddenmse_full.jsonc` | `3fa5683` | 4214 | failed during vLLM init; replaces 4204 |
+| `hiddenmse-lora-chunk256` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `2a5c062` | 4215 | failed during vLLM init; replaces 4205 |
+| `symjlens-full-chunk256` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `36dd42b` | 4216 | failed during vLLM init; replaces 4206 |
+| `symjlens-lora-chunk256` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `8391803` | 4217 | failed during vLLM init; replaces 4207 |
 
 At 03:52 HKT, jobs 4208-4213 occupied all 12 available A800s across nodes 1/2;
-jobs 4214-4217 remained ready in the queue. Slurm comments match every run/commit
-pair, and the stored batch scripts for jobs 4208 and 4217 contain the inherited
-safe-path controls. Each job therefore executes its recorded immutable snapshot.
+jobs 4214-4217 followed immediately as slots freed. Slurm comments match every
+run/commit pair, and the stored batch scripts for jobs 4208 and 4217 contain the
+inherited safe-path controls. Each job therefore executed its recorded immutable
+snapshot.
 
 ## Runtime incidents
 
@@ -176,3 +177,10 @@ behavior, and all ten replacement configs select the same value. A distinct
 runs. A saved-tensor audit measures 0.251x of the original autograd state on the
 same JSD while matching both value and gradient; the full 29-test suite, Ruff, and
 Pyright pass. No failed job reached step 1 or wrote a checkpoint.
+
+The first chunked attempt set vLLM's memory fraction to 0.18. It produced a
+343,319-token KV cache and 922 Qwen3.5 Mamba cache blocks, but vLLM requires one
+block for each of its default 1,024 maximum concurrent sequences and therefore
+failed fast during initialization. Jobs 4208-4217 never reached evaluation or the
+chunked loss. The replacement raises the fraction to 0.20, which remains 4 GiB
+below the original reservation while clearing this deterministic cache threshold.

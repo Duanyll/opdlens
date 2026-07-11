@@ -128,11 +128,11 @@ def test_dapo_math_matrix_protocol_is_pinned():
         assert config["eval_max_samples"] is None
         assert config["rollout_max_tokens"] == 2048
         assert config["base_loss_chunk_size"] == 256
-        assert config["vllm_gpu_memory_utilization"] == 0.18
+        assert config["vllm_gpu_memory_utilization"] == 0.20
         assert config["launch"]["env"]["PYTORCH_CUDA_ALLOC_CONF"] == (
             "expandable_segments:True"
         )
-        assert config["experiment_name"].endswith("-chunk256")
+        assert config["experiment_name"].endswith("-chunk256vllm020")
         assert config["eval_steps"] == 100
         assert config["launch"]["devices"] == 2
         if finetune == "lora":

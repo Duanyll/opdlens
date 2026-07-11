@@ -9,7 +9,7 @@
       "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"
     }
   },
-  "experiment_name": "jlens-full-chunk256",
+  "experiment_name": "jlens-full-chunk256vllm020",
   "trackio_project": "opdlens-math",
   "seed": 42,
   "student": {
@@ -72,7 +72,7 @@
   "rollout_temperature": 0.9,
   "rollout_top_p": 1.0,
   "rollout_max_tokens": 2048,
-  "vllm_gpu_memory_utilization": 0.18,
+  "vllm_gpu_memory_utilization": 0.2,
   "vllm_max_model_len": 4096,
   "vllm_enforce_eager": false,
   "global_batch_size": 96,
@@ -81,7 +81,7 @@
   "eval_steps": 100,
   "eval_at_start": true,
   "checkpoint_interval": 100,
-  "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/dapo17k-math/jlens-full-chunk256",
+  "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/dapo17k-math/jlens-full-chunk256vllm020",
   "optimizer_config": {
     "class_name": "AdamW",
     "lr": 2e-05,

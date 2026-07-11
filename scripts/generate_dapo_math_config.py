@@ -27,7 +27,7 @@ MATH_SUBJECTS = [
     "precalculus",
 ]
 TEACHER_LAYERS = [8, 16, 24]
-MEMORY_PROFILE = "chunk256"
+MEMORY_PROFILE = "chunk256vllm020"
 
 
 def arm_config(arm: str) -> tuple[str, dict[str, Any]]:
@@ -103,7 +103,7 @@ def apply_dataset_spine(config: dict[str, Any]) -> None:
     config["eval_max_samples"] = None
     config["rollout_max_tokens"] = 2048
     config["base_loss_chunk_size"] = 256
-    config["vllm_gpu_memory_utilization"] = 0.18
+    config["vllm_gpu_memory_utilization"] = 0.20
     config["eval_steps"] = 100
     config["launch"]["devices"] = 2
     config["launch"]["env"]["HF_DATASETS_OFFLINE"] = "1"
