@@ -34,6 +34,9 @@ round-one matrix. No DAPO/MATH training job has been submitted yet.
   5,000 rows; there is no best-step selection.
 - LoRA preserves every evaluated trained state (100/200/300) and disables rotation.
   Full fine-tuning retains the 100-step checkpoint cadence.
+- Jobs launch through `scripts/run_dapo_math.sh`, an immutable Git snapshot runner
+  with two GPUs and a 24-hour limit (within the a800 partition's three-day cap).
+  It intentionally does not use `headless-tui-run`.
 
 The transferred initial auxiliary settings are B/C/E weight 0.01 and D weight 1.94,
 with one shared 512-token subset across layers and fp32 D bridge/MSE. These values are

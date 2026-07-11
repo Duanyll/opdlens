@@ -59,6 +59,11 @@ two-pooled-SE threshold of 0.0317. At step 200, C scored 0.8014 versus 0.8332, a
 appended; B/C are jobs 4160/4161/4171/4172 and the E replacements are 4169/4170.
 The current matrix remains running and is not replaced.
 
+The first legacy-profile checkpoint is stable: B-full reaches 0.7756 and C-full
+0.7877 at step 50 from the common 0.7475 start. Their initial weighted auxiliary
+terms are about 0.17x and 0.32x of base loss, matching the historical scale and
+showing none of the 0.1-pilot collapse.
+
 ## Offline artifacts
 
 | Artifact | Purpose | Status |
