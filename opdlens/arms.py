@@ -22,7 +22,13 @@ from typing import Annotated, Any, Literal
 import torch
 from pydantic import BaseModel, ConfigDict, Discriminator, PrivateAttr, Tag, TypeAdapter
 
-from .losses import KLDir, hidden_mse, lens_kl, map_student_layer
+from .losses import (
+    KLDir,
+    hidden_mse,
+    lens_kl,
+    map_student_layer,
+    sample_aux_token_index,
+)
 from .types import CaptureSpec, Readout
 
 
@@ -84,6 +90,7 @@ class LogitLensArm(BaseArm):
     type: Literal["logit_lens"] = "logit_lens"
 
     def aux_loss(self, student, teacher, loss_mask, spec, *, unembed_s, unembed_t):
+        token_index = sample_aux_token_index(loss_mask, self.aux_max_tokens)
         terms = [
             lens_kl(
                 student.hidden[ls],
@@ -94,6 +101,7 @@ class LogitLensArm(BaseArm):
                 temperature=self.temperature,
                 aux_max_tokens=self.aux_max_tokens,
                 kl=self.kl,
+                token_index=token_index,
             )
             for lt, ls in zip(spec.teacher_layers, spec.student_layers, strict=True)
         ]
@@ -128,6 +136,7 @@ class JLensArm(BaseArm):
                 f"fitted source layers are {sorted(jacobians)}. Re-fit the lens with "
                 f"--source-layers matching this arm's teacher_layers."
             )
+        token_index = sample_aux_token_index(loss_mask, self.aux_max_tokens)
         terms: list[torch.Tensor] = []
         for lt, ls in zip(spec.teacher_layers, spec.student_layers, strict=True):
             h = teacher.hidden[lt]
@@ -144,6 +153,7 @@ class JLensArm(BaseArm):
                     temperature=self.temperature,
                     aux_max_tokens=self.aux_max_tokens,
                     kl=self.kl,
+                    token_index=token_index,
                 )
             )
         return self._mean_over_pairs(terms), {}
@@ -186,7 +196,7 @@ class HiddenMseArm(BaseArm):
                     f"missing {missing}"
                 )
             bridges[layer] = {
-                key: params[key].to(device=ref.device, dtype=ref.dtype)
+                key: params[key].to(device=ref.device, dtype=torch.float32)
                 for key in ("W", "b_x", "b_y")
             }
             if layer >= 0 and "l_s" in params:
@@ -211,14 +221,17 @@ class HiddenMseArm(BaseArm):
                 f"{self.bridge_path} maps teacher layer {teacher_layer} to student "
                 f"layer {fitted_student_layer}, but this arm maps it to {student_layer}"
             )
-        return (h - b["b_x"]) @ b["W"] + b["b_y"]
+        return (h.float() - b["b_x"]) @ b["W"] + b["b_y"]
 
     def aux_loss(self, student, teacher, loss_mask, spec, *, unembed_s, unembed_t):
+        token_index = sample_aux_token_index(loss_mask, self.aux_max_tokens)
         terms = [
             hidden_mse(
                 student.hidden[ls],
                 self._apply_bridge(teacher.hidden[lt], lt, ls),
                 loss_mask,
+                aux_max_tokens=self.aux_max_tokens,
+                token_index=token_index,
             )
             for lt, ls in zip(spec.teacher_layers, spec.student_layers, strict=True)
         ]
@@ -285,6 +298,7 @@ class SymmetricJLensArm(BaseArm):
             "teacher_layers",
         )
 
+        token_index = sample_aux_token_index(loss_mask, self.aux_max_tokens)
         terms: list[torch.Tensor] = []
         for lt, ls in zip(spec.teacher_layers, spec.student_layers, strict=True):
             student_hidden = student.hidden[ls]
@@ -305,6 +319,7 @@ class SymmetricJLensArm(BaseArm):
                     temperature=self.temperature,
                     aux_max_tokens=self.aux_max_tokens,
                     kl=self.kl,
+                    token_index=token_index,
                 )
             )
         return self._mean_over_pairs(terms), {}

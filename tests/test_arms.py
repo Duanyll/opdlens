@@ -40,6 +40,55 @@ def test_logit_lens_arm_finite():
     assert torch.isfinite(aux) and aux.ndim == 0
 
 
+def test_logit_lens_layers_share_one_token_sample(monkeypatch):
+    calls = 0
+
+    def reverse_randperm(n, *, device=None):
+        nonlocal calls
+        calls += 1
+        return torch.arange(n - 1, -1, -1, device=device)
+
+    monkeypatch.setattr(torch, "randperm", reverse_randperm)
+    arm = parse_arm(
+        {
+            "type": "logit_lens",
+            "aux_weight": 0.1,
+            "aux_max_tokens": 3,
+            "teacher_layers": [2, 4],
+        }
+    )
+    spec = arm.capture_spec(4, 6)
+    rows = torch.arange(8, dtype=torch.float32).unsqueeze(1).expand(-1, 4)
+    student = Readout(
+        logits=None, hidden={layer: rows.clone() for layer in spec.student_layers}
+    )
+    teacher = Readout(
+        logits=None, hidden={layer: rows.clone() for layer in spec.teacher_layers}
+    )
+    student_seen: list[torch.Tensor] = []
+    teacher_seen: list[torch.Tensor] = []
+
+    def student_readout(x):
+        student_seen.append(x[:, 0].clone())
+        return x[:, :1].expand(-1, 8)
+
+    def teacher_readout(x):
+        teacher_seen.append(x[:, 0].clone())
+        return x[:, :1].expand(-1, 8)
+
+    arm.aux_loss(
+        student,
+        teacher,
+        torch.ones(8, dtype=torch.bool),
+        spec,
+        unembed_s=student_readout,
+        unembed_t=teacher_readout,
+    )
+    expected = torch.tensor([7.0, 6.0, 5.0])
+    assert calls == 1
+    assert all(torch.equal(seen, expected) for seen in student_seen + teacher_seen)
+
+
 def test_jlens_arm_finite(tmp_path):
     d, v = 16, 32
     us, ut = torch.nn.Linear(d, v), torch.nn.Linear(d, v)
@@ -108,6 +157,54 @@ def test_hidden_mse_arm_finite(tmp_path):
     student, teacher, mask = _readouts(spec, d=d)
     aux, _ = arm.aux_loss(student, teacher, mask, spec, unembed_s=None, unembed_t=None)
     assert torch.isfinite(aux)
+
+
+def test_hidden_mse_caps_shared_tokens_and_uses_fp32(tmp_path, monkeypatch):
+    calls = 0
+
+    def reverse_randperm(n, *, device=None):
+        nonlocal calls
+        calls += 1
+        return torch.arange(n - 1, -1, -1, device=device)
+
+    monkeypatch.setattr(torch, "randperm", reverse_randperm)
+    d, seq = 4, 6
+    path = tmp_path / "bridge.pt"
+    torch.save({"W": torch.eye(d), "b_x": torch.zeros(d), "b_y": torch.zeros(d)}, path)
+    arm = parse_arm(
+        {
+            "type": "hidden_mse",
+            "aux_weight": 1.94,
+            "aux_max_tokens": 2,
+            "teacher_layers": [2, 4],
+            "bridge_path": str(path),
+        }
+    )
+    spec = arm.capture_spec(4, 6)
+    zeros = torch.zeros(seq, d, dtype=torch.bfloat16)
+    rows = (
+        torch.arange(seq, dtype=torch.float32)
+        .unsqueeze(1)
+        .expand(-1, d)
+        .to(torch.bfloat16)
+    )
+    student = Readout(
+        logits=None, hidden={layer: zeros.clone() for layer in spec.student_layers}
+    )
+    teacher = Readout(
+        logits=None, hidden={layer: rows.clone() for layer in spec.teacher_layers}
+    )
+    aux, _ = arm.aux_loss(
+        student,
+        teacher,
+        torch.ones(seq, dtype=torch.bool),
+        spec,
+        unembed_s=None,
+        unembed_t=None,
+    )
+    assert calls == 1
+    assert aux.dtype == torch.float32
+    assert torch.allclose(aux, torch.tensor((5.0**2 + 4.0**2) / 2))
 
 
 def test_hidden_mse_arm_supports_per_layer_bridge(tmp_path):

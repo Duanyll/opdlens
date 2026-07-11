@@ -117,7 +117,10 @@ def opd_base_loss(
     return _masked_mean(per_pos, loss_mask)
 
 
-def _supervised_index(loss_mask: torch.Tensor, aux_max_tokens: int) -> torch.Tensor:
+def sample_aux_token_index(
+    loss_mask: torch.Tensor, aux_max_tokens: int
+) -> torch.Tensor:
+    """Select one completion-token subset to share across supervised layers."""
     idx = loss_mask.nonzero(as_tuple=False).squeeze(-1)
     if aux_max_tokens and idx.numel() > aux_max_tokens:
         sel = torch.randperm(idx.numel(), device=idx.device)[:aux_max_tokens]
@@ -135,6 +138,7 @@ def lens_kl(
     temperature: float = 1.0,
     aux_max_tokens: int = 512,
     kl: KLDir = "forward",
+    token_index: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Shared vocab-space aux for arms B/C/E.
 
@@ -143,7 +147,11 @@ def lens_kl(
     Supervised completion positions are subsampled to ``aux_max_tokens`` *before*
     either readout, so the unembed runs on ``[n, d]``, not ``[T, d]``.
     """
-    idx = _supervised_index(loss_mask, aux_max_tokens)
+    idx = (
+        sample_aux_token_index(loss_mask, aux_max_tokens)
+        if token_index is None
+        else token_index
+    )
     if idx.numel() == 0:
         return student_hidden.new_zeros(())
     student_logits = student_readout(student_hidden[idx])  # [n, V]
@@ -155,10 +163,21 @@ def hidden_mse(
     student_hidden: torch.Tensor,
     teacher_hidden: torch.Tensor,
     loss_mask: torch.Tensor,
+    *,
+    aux_max_tokens: int = 512,
+    token_index: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Arm D: raw-hidden MSE (teacher side already mapped through the bridge).
 
-    Both ``[T, d_s]``. Per-position mean over ``d``, masked-mean over positions.
+    Both ``[T, d_s]``. Compute in fp32, then mean over ``d`` and over one shared
+    completion-token subset.
     """
-    per_pos = (student_hidden - teacher_hidden).pow(2).mean(dim=-1)
-    return _masked_mean(per_pos, loss_mask)
+    idx = (
+        sample_aux_token_index(loss_mask, aux_max_tokens)
+        if token_index is None
+        else token_index
+    )
+    if idx.numel() == 0:
+        return student_hidden.float().sum() * 0.0
+    residual = student_hidden[idx].float() - teacher_hidden[idx].float()
+    return residual.pow(2).mean(dim=-1).mean()
