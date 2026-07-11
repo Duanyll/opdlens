@@ -15,7 +15,10 @@ OUT=/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens-cot.pt
 mkdir -p "$OUT_DIR"
 
 cd "$REPO"
-srun --exclusive --exact --ntasks=1 --gpus-per-task=1 --cpus-per-task=8 --mem=60G \
+# Override the job-level --gpus=2 as well as binding one GPU per task. Without
+# --gpus=1 Slurm records TresPerStep=2 and the first shard blocks the second.
+srun --exclusive --exact --ntasks=1 --gpus=1 --gpus-per-task=1 \
+  --cpus-per-task=8 --mem=60G \
   --container-workdir="$REPO" \
   uv run --project "$REPO" --no-sync -m opdlens.fit.fit_jlens \
   --model Qwen/Qwen3.5-2B \
@@ -26,7 +29,8 @@ srun --exclusive --exact --ntasks=1 --gpus-per-task=1 --cpus-per-task=8 --mem=60
   --out "$OUT_DIR/shard0.pt" &
 shard0_pid=$!
 
-srun --exclusive --exact --ntasks=1 --gpus-per-task=1 --cpus-per-task=8 --mem=60G \
+srun --exclusive --exact --ntasks=1 --gpus=1 --gpus-per-task=1 \
+  --cpus-per-task=8 --mem=60G \
   --container-workdir="$REPO" \
   uv run --project "$REPO" --no-sync -m opdlens.fit.fit_jlens \
   --model Qwen/Qwen3.5-2B \
