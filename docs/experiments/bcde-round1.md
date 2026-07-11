@@ -13,9 +13,10 @@ not change the model family mid-matrix.
 - Schedule: 300 steps, global batch 96, eval every 50 steps, seed 42.
 - Optimizer: the validated baseline values, including 2e-5 for full and 5e-5 for
   LoRA. Each run uses two A800 GPUs with the global batch held fixed.
-- Auxiliary protocol: weight 0.1, teacher layers 8/16/24, mapped student layers
-  6/12/18. Apart from the arm block and run/checkpoint identity, all training and
-  evaluation fields come directly from the matching logits baseline.
+- Auxiliary protocol: teacher layers 8/16/24, mapped student layers 6/12/18.
+  D uses weight 0.1; after the failed scale pilots, vocab-KL arms B/C/E use 0.01.
+  Apart from the arm block and run/checkpoint identity, all training and evaluation
+  fields come directly from the matching logits baseline.
 - LoRA saves every evaluated trained state (steps 50/100/150/200/250/300) and
   disables checkpoint rotation. Full fine-tuning retains the baseline's 100-step
   checkpoint cadence.
@@ -29,7 +30,7 @@ The reference curves are `logits-full`: 0.7491 / 0.8165 / 0.8332 / 0.8256 and
 |---|---|---|
 | `/gdata/users/duanyll/jlens/qwen3p5_9b_v2/lens.pt` | teacher Jacobian, 264 prompts | ready |
 | `/gdata/users/duanyll/jlens/qwen3p5_bridge/bridge.pt` | per-layer 9B->2B bridge | ready |
-| `/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens.pt` | student Jacobian, 264 prompts | fitting in job 4127 (`dc31e3c`) |
+| `/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens.pt` | student Jacobian, 264 prompts | ready; job 4127 (`dc31e3c`) |
 
 ## Run ledger
 
@@ -39,14 +40,14 @@ The same commit is also stored in the Slurm job comment.
 
 | Run | Config | Commit | Slurm job | State |
 |---|---|---|---|---|
-| `logitlens-full` | `examples/gsm8k_round1_logitlens_full.jsonc` | `0e8bc45` | 4136 | starting (replaces 4128) |
-| `logitlens-lora` | `examples/gsm8k_round1_logitlens_lora.jsonc` | `3079c15` | 4137 | starting (replaces 4129) |
-| `jlens-full` | `examples/gsm8k_round1_jlens_full.jsonc` | `42bf0a4` | 4138 | starting (replaces 4130) |
-| `jlens-lora` | `examples/gsm8k_round1_jlens_lora.jsonc` | `e76d37a` | 4139 | starting (replaces 4131) |
-| `hiddenmse-full` | `examples/gsm8k_round1_hiddenmse_full.jsonc` | `ec0743a` | 4140 | starting (replaces 4132) |
-| `hiddenmse-lora` | `examples/gsm8k_round1_hiddenmse_lora.jsonc` | `bba97df` | 4141 | starting (replaces 4133) |
-| `symjlens-full` | `examples/gsm8k_round1_symjlens_full.jsonc` | `d02e6e1` | 4142 | waiting on artifact job 4127 |
-| `symjlens-lora` | `examples/gsm8k_round1_symjlens_lora.jsonc` | `3cc6e3d` | 4143 | waiting on artifact job 4127 |
+| `logitlens-full-aux0.01` | `examples/gsm8k_round1_logitlens_full_aux0p01.jsonc` | `035832d` | 4144 | running |
+| `logitlens-lora-aux0.01` | `examples/gsm8k_round1_logitlens_lora_aux0p01.jsonc` | `72930be` | 4146 | running |
+| `jlens-full-aux0.01` | `examples/gsm8k_round1_jlens_full_aux0p01.jsonc` | `02702c6` | 4145 | running |
+| `jlens-lora-aux0.01` | `examples/gsm8k_round1_jlens_lora_aux0p01.jsonc` | `9755e55` | 4147 | running |
+| `hiddenmse-full` | `examples/gsm8k_round1_hiddenmse_full.jsonc` | `ec0743a` | 4140 | running |
+| `hiddenmse-lora` | `examples/gsm8k_round1_hiddenmse_lora.jsonc` | `bba97df` | 4141 | running |
+| `symjlens-full-aux0.01` | `examples/gsm8k_round1_symjlens_full_aux0p01.jsonc` | `a34ac88` | 4148 | queued |
+| `symjlens-lora-aux0.01` | `examples/gsm8k_round1_symjlens_lora_aux0p01.jsonc` | `767d06b` | 4149 | queued |
 
 ## Monitoring
 
@@ -61,8 +62,9 @@ Jobs 4128-4133 exited before Python startup because Slurm resolved `env` to a
 non-executable user-local path. No model or dataset state was touched. The launcher
 now invokes `/usr/bin/env` explicitly; replacement jobs are recorded in the ledger.
 
-The initial B/C/E configs used the example-arm weight 0.1. At step 50,
-`logitlens-full` fell from 0.7475 to 0.5838 while `hiddenmse-full` reached 0.8287.
+The initial B/C/E configs used the example-arm weight 0.1. At step 50, B-full,
+B-LoRA, C-full, and C-LoRA scored 0.5838, 0.5580, 0.5792, and 0.4541 respectively,
+all down from 0.7475, while `hiddenmse-full` reached 0.8287.
 The raw vocab-KL auxiliary was about 3.1 for B and 5.9 for C versus a base loss
 near 0.037, so weight 0.1 made it dominate optimization. B/C/E replacements use
 the previously exercised jlens CoT weight 0.01 and a distinct `-aux0.01` run name;
