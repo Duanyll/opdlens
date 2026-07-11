@@ -44,7 +44,7 @@ The same commit is also stored in the Slurm job comment.
 | `jlens-full` | `examples/gsm8k_round1_jlens_full.jsonc` | `42bf0a4` | 4138 | starting (replaces 4130) |
 | `jlens-lora` | `examples/gsm8k_round1_jlens_lora.jsonc` | `e76d37a` | 4139 | starting (replaces 4131) |
 | `hiddenmse-full` | `examples/gsm8k_round1_hiddenmse_full.jsonc` | `ec0743a` | 4140 | starting (replaces 4132) |
-| `hiddenmse-lora` | `examples/gsm8k_round1_hiddenmse_lora.jsonc` | pending | pending | pending |
+| `hiddenmse-lora` | `examples/gsm8k_round1_hiddenmse_lora.jsonc` | `bba97df` | 4141 | starting (replaces 4133) |
 | `symjlens-full` | `examples/gsm8k_round1_symjlens_full.jsonc` | pending | pending | artifact dependency |
 | `symjlens-lora` | `examples/gsm8k_round1_symjlens_lora.jsonc` | pending | pending | artifact dependency |
 
