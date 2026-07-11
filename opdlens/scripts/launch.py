@@ -63,9 +63,27 @@ def run(config_path: str, updates: Sequence[str], removes: Sequence[str]) -> Non
     os.execvpe("torchrun", cmd, env)
 
 
+def _neutralize_tilelang_stub() -> None:
+    """Block ``import tilelang`` before any model (hence ``fla``) load.
+
+    ``tilelang`` (a vLLM dependency, imported by ``fla`` during the Qwen3.5 load)
+    ships a ``libcudart_stub.so`` lacking ``cudaDeviceReset``. Once loaded, it
+    shadows torch's real libcudart: vLLM/flashinfer's ``CudaRTLibrary`` resolve
+    ``libcudart`` via ``find_loaded_library`` (first ``/proc/self/maps`` match) and
+    crash binding ``cudaDeviceReset`` during the multi-GPU engine init. ``fla`` only
+    uses the tilelang backend on Hopper (we run Ampere A800, where it uses Triton),
+    so making the import fail is safe — ``fla``'s backend probe catches ``ImportError``
+    and falls back to Triton — and keeps the stub out of the process entirely. Must
+    run before the trainer (and its lazy transformers/fla imports) is imported."""
+    import sys
+
+    sys.modules.setdefault("tilelang", None)  # type: ignore[assignment]
+
+
 def _run_child(
     config_path: str, updates: Sequence[str], removes: Sequence[str]
 ) -> None:
+    _neutralize_tilelang_stub()
     from ..training import OpdTrainer
 
     config = load_config_file(config_path, updates, removes)
