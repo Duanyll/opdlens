@@ -14,7 +14,7 @@ from typing import Any
 
 import torch
 
-from ..data import read_jsonl
+from ..data import read_hf, read_jsonl
 from ..jlens import fit, from_hf
 from ..models import LanguageModel
 from ..utils.logging import console, get_logger
@@ -27,9 +27,11 @@ def main() -> None:
         description="Fit a Jacobian lens for a teacher or initial student model."
     )
     parser.add_argument("--model", required=True, help="HF model id or local path.")
-    parser.add_argument(
-        "--prompts", required=True, help="Calibration prompts (.jsonl)."
-    )
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--prompts", help="Calibration prompts (.jsonl).")
+    source.add_argument("--hf-id", help="Hugging Face calibration dataset id.")
+    parser.add_argument("--hf-name", default=None)
+    parser.add_argument("--split", default="train")
     parser.add_argument("--prompt-key", default="question")
     parser.add_argument(
         "--source-layers",
@@ -40,6 +42,12 @@ def main() -> None:
     parser.add_argument("--n-prompts", type=int, default=256)
     parser.add_argument("--max-seq-len", type=int, default=384)
     parser.add_argument("--dim-batch", type=int, default=16)
+    parser.add_argument(
+        "--checkpoint-every",
+        type=int,
+        default=8,
+        help="Persist resumable fit state every N prompts.",
+    )
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -47,7 +55,12 @@ def main() -> None:
     lm.load(device, trainable=False)
 
     lens_model: Any = from_hf(lm.model, lm.tokenizer)
-    rows = read_jsonl(args.prompts)[: args.n_prompts]
+    if args.prompts:
+        rows = read_jsonl(args.prompts)[: args.n_prompts]
+    else:
+        rows = list(read_hf(args.hf_id, args.split, name=args.hf_name))[
+            : args.n_prompts
+        ]
     prompts = [str(row[args.prompt_key]) for row in rows]
     source_layers = [int(x) for x in args.source_layers.split(",")]
     logger.info("Fitting lens over %d prompts, layers %s", len(prompts), source_layers)
@@ -59,6 +72,7 @@ def main() -> None:
         max_seq_len=args.max_seq_len,
         dim_batch=args.dim_batch,
         checkpoint_path=args.out,
+        checkpoint_every=args.checkpoint_every,
     )
     lens.save(args.out)
     console.print(f"[green]Saved Jacobian lens to {args.out}[/green] {lens!r}")

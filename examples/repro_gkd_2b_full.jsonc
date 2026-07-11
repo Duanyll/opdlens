@@ -60,8 +60,13 @@
   "rollouts_per_prompt": 1,
 
   "train_steps": 300,
-  "eval_steps": 100,
+  // Eval every 50 (not 100): a full 1319-sample greedy pass is ~30s (~3% of the run),
+  // so this doubles curve resolution to a 7-point grid while keeping the baseline's
+  // reported 0/100/200/300 points exactly on the grid. Eval is off the training path
+  // (greedy, separate sampling), so cadence never affects training dynamics.
+  "eval_steps": 50,
   "eval_at_start": true,
+  // Checkpoints stay at 100 — full-2B writes to the HDD are large; no need to match eval.
   "checkpoint_interval": 100,
   "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/repro-gkd-2b-full",
 

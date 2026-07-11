@@ -110,6 +110,43 @@ def test_hidden_mse_arm_finite(tmp_path):
     assert torch.isfinite(aux)
 
 
+def test_hidden_mse_arm_supports_per_layer_bridge(tmp_path):
+    d = 16
+    path = tmp_path / "bridge.pt"
+    torch.save(
+        {
+            "pairs": {
+                2: {
+                    "l_s": 1,
+                    "W": torch.eye(d),
+                    "b_x": torch.zeros(d),
+                    "b_y": torch.zeros(d),
+                },
+                4: {
+                    "l_s": 2,
+                    "W": torch.eye(d),
+                    "b_x": torch.zeros(d),
+                    "b_y": torch.zeros(d),
+                },
+            }
+        },
+        path,
+    )
+    arm = parse_arm(
+        {
+            "type": "hidden_mse",
+            "aux_weight": 0.1,
+            "teacher_layers": [2, 4],
+            "bridge_path": str(path),
+        }
+    )
+    spec = arm.capture_spec(4, 6)
+    assert spec.student_layers == (1, 2)
+    student, teacher, mask = _readouts(spec, d=d)
+    aux, _ = arm.aux_loss(student, teacher, mask, spec, unembed_s=None, unembed_t=None)
+    assert torch.isfinite(aux)
+
+
 def test_symmetric_jlens_arm_applies_both_lenses(tmp_path):
     d_student, d_teacher, vocab = 12, 16, 32
     unembed_s = torch.nn.Linear(d_student, vocab)

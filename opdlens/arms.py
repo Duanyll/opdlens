@@ -156,25 +156,69 @@ class HiddenMseArm(BaseArm):
     bridge_path: str
     """Path to a ``bridge.pt`` = ``{"W": [d_t, d_s], "b_x": [d_t], "b_y": [d_s]}``."""
 
-    _bridge: dict[str, torch.Tensor] | None = PrivateAttr(default=None)
+    _bridges: dict[int, dict[str, torch.Tensor]] | None = PrivateAttr(default=None)
+    _bridge_student_layers: dict[int, int] = PrivateAttr(default_factory=dict)
 
-    def _load_bridge(self, ref: torch.Tensor) -> dict[str, torch.Tensor]:
-        if self._bridge is None:
-            raw = torch.load(self.bridge_path, map_location="cpu", weights_only=True)
-            self._bridge = {
-                k: raw[k].to(device=ref.device, dtype=ref.dtype)
-                for k in ("W", "b_x", "b_y")
+    def _load_bridges(self, ref: torch.Tensor) -> dict[int, dict[str, torch.Tensor]]:
+        if self._bridges is not None:
+            return self._bridges
+
+        raw = torch.load(self.bridge_path, map_location="cpu", weights_only=True)
+        if all(key in raw for key in ("W", "b_x", "b_y")):
+            # -1 is the shared bridge written by opdlens.fit.fit_bridge.
+            sources = {-1: raw}
+        elif isinstance(raw.get("pairs"), dict):
+            # Also accept the higher-quality per-layer bridge artifact produced by
+            # the original jlens experiments.
+            sources = {int(layer): params for layer, params in raw["pairs"].items()}
+        else:
+            raise ValueError(
+                f"{self.bridge_path} is not a bridge file: expected W/b_x/b_y "
+                "or a per-layer pairs mapping"
+            )
+
+        bridges: dict[int, dict[str, torch.Tensor]] = {}
+        for layer, params in sources.items():
+            missing = [key for key in ("W", "b_x", "b_y") if key not in params]
+            if missing:
+                raise ValueError(
+                    f"{self.bridge_path} bridge for teacher layer {layer} is "
+                    f"missing {missing}"
+                )
+            bridges[layer] = {
+                key: params[key].to(device=ref.device, dtype=ref.dtype)
+                for key in ("W", "b_x", "b_y")
             }
-        return self._bridge
+            if layer >= 0 and "l_s" in params:
+                self._bridge_student_layers[layer] = int(params["l_s"])
+        self._bridges = bridges
+        return bridges
 
-    def _apply_bridge(self, h: torch.Tensor) -> torch.Tensor:
-        b = self._load_bridge(h)
+    def _apply_bridge(
+        self, h: torch.Tensor, teacher_layer: int, student_layer: int
+    ) -> torch.Tensor:
+        bridges = self._load_bridges(h)
+        b = bridges.get(teacher_layer, bridges.get(-1))
+        if b is None:
+            available = sorted(layer for layer in bridges if layer >= 0)
+            raise ValueError(
+                f"{self.bridge_path} has no bridge for teacher layer "
+                f"{teacher_layer}; available layers are {available}"
+            )
+        fitted_student_layer = self._bridge_student_layers.get(teacher_layer)
+        if fitted_student_layer is not None and fitted_student_layer != student_layer:
+            raise ValueError(
+                f"{self.bridge_path} maps teacher layer {teacher_layer} to student "
+                f"layer {fitted_student_layer}, but this arm maps it to {student_layer}"
+            )
         return (h - b["b_x"]) @ b["W"] + b["b_y"]
 
     def aux_loss(self, student, teacher, loss_mask, spec, *, unembed_s, unembed_t):
         terms = [
             hidden_mse(
-                student.hidden[ls], self._apply_bridge(teacher.hidden[lt]), loss_mask
+                student.hidden[ls],
+                self._apply_bridge(teacher.hidden[lt], lt, ls),
+                loss_mask,
             )
             for lt, ls in zip(spec.teacher_layers, spec.student_layers, strict=True)
         ]
