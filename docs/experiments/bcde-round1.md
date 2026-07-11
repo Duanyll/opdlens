@@ -68,12 +68,12 @@ The same commit is also stored in the Slurm job comment.
 
 | Run | Profile | Config | Commit | Slurm job | State |
 |---|---|---|---|---|---|
-| `logitlens-full-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_logitlens_full_aux0p01.jsonc` | `035832d` | 4144 | running |
-| `logitlens-lora-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_logitlens_lora_aux0p01.jsonc` | `72930be` | 4146 | running |
-| `jlens-full-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_jlens_full_aux0p01.jsonc` | `02702c6` | 4145 | running |
-| `jlens-lora-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_jlens_lora_aux0p01.jsonc` | `9755e55` | 4147 | running |
-| `hiddenmse-full-aux1.94` | `current-hidden-shared` | `examples/gsm8k_round1_hiddenmse_full_aux1p94.jsonc` | `f3d3ff9` | 4153 | running; replaces underweighted 4140 |
-| `hiddenmse-lora-aux1.94` | `current-hidden-shared` | `examples/gsm8k_round1_hiddenmse_lora_aux1p94.jsonc` | `d6fceee` | 4154 | running; replaces underweighted 4141 |
+| `logitlens-full-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_logitlens_full_aux0p01.jsonc` | `035832d` | 4144 | stable, running |
+| `logitlens-lora-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_logitlens_lora_aux0p01.jsonc` | `72930be` | 4146 | stable, running |
+| `jlens-full-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_jlens_full_aux0p01.jsonc` | `02702c6` | 4145 | stable, running |
+| `jlens-lora-aux0.01` | `current-vocab-compat` | `examples/gsm8k_round1_jlens_lora_aux0p01.jsonc` | `9755e55` | 4147 | stable, running |
+| `hiddenmse-full-aux1.94` | `current-hidden-shared` | `examples/gsm8k_round1_hiddenmse_full_aux1p94.jsonc` | `f3d3ff9` | 4153 | stable, running; replaces underweighted 4140 |
+| `hiddenmse-lora-aux1.94` | `current-hidden-shared` | `examples/gsm8k_round1_hiddenmse_lora_aux1p94.jsonc` | `d6fceee` | 4154 | stable, running; replaces underweighted 4141 |
 | `symjlens-full-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_full_aux0p01.jsonc` | `564f218` | 4158 | dependency on student-lens job 4155 |
 | `symjlens-lora-aux0.01` | `current-sym-shared` | `examples/gsm8k_round1_symjlens_lora_aux0p01.jsonc` | `ada5396` | 4159 | dependency on student-lens job 4155 |
 
@@ -107,6 +107,8 @@ the auxiliary only 0.066x of the current base and made D nearly a logits run.
 Jobs 4140/4141 were cancelled after steps 181/100 despite healthy
 curves, because the comparison was underweighted. Jobs 4153/4154 use 1.94, whose
 initial absolute contribution (0.0476) lies between B (0.0310) and C (0.0589).
+The corrected step-50 accuracies are 0.7885 (full) and 0.7748 (LoRA), both up
+from 0.7475 with finite losses and gradient norms.
 
 The archaeological audit also found two token-semantics regressions. B/C/E had
 sampled a different capped token subset for every layer, while D ignored the
