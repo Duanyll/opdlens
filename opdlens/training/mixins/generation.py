@@ -59,6 +59,13 @@ class GenerationMixin(BaseTrainer):
     rollout_backend: Literal["vllm", "hf"] = "vllm"
     vllm_gpu_memory_utilization: float = 0.3
     vllm_max_model_len: int = 2048
+    vllm_enforce_eager: bool = True
+    """Disable CUDA-graph capture in the colocated engine. ``True`` is the safe
+    default (no graph memory, no capture step). ``False`` captures decode graphs —
+    much faster decode for the small student, and compatible with the in-place
+    ``apply_model(load_weights)`` weight sync (graphs replay from the persistent
+    param buffers) — at the cost of extra capture memory, so it may need a higher
+    ``vllm_gpu_memory_utilization``."""
 
     # Training-rollout sampling — SEPARATE from a benchmark's eval sampling and
     # from the base-KL / aux temperatures.
@@ -106,7 +113,7 @@ class GenerationMixin(BaseTrainer):
                 dtype=vllm_dtype,
                 gpu_memory_utilization=self.vllm_gpu_memory_utilization,
                 max_model_len=self.vllm_max_model_len,
-                enforce_eager=True,
+                enforce_eager=self.vllm_enforce_eager,
                 trust_remote_code=self.student.trust_remote_code,
             )
         finally:

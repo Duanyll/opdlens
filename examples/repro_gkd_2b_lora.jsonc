@@ -44,6 +44,10 @@
   "rollout_max_tokens": 768,
   "vllm_gpu_memory_utilization": 0.25,
   "vllm_max_model_len": 4096,
+  // CUDA graphs (enforce_eager=false) benchmark 5.8x faster decode but currently
+  // trip a vLLM-0.24/CUDA-13 cudart-stub bug once the 9B teacher is co-resident
+  // (WIP). Keep eager for a stable run — biggest remaining lever once fixed.
+  "vllm_enforce_eager": true,
 
   "global_batch_size": 96,
   "rollouts_per_prompt": 1,

@@ -974,6 +974,11 @@
       "title": "Vllm Max Model Len",
       "type": "integer"
     },
+    "vllm_enforce_eager": {
+      "default": true,
+      "title": "Vllm Enforce Eager",
+      "type": "boolean"
+    },
     "rollout_temperature": {
       "default": 1.0,
       "title": "Rollout Temperature",
