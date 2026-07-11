@@ -41,7 +41,7 @@ The same commit is also stored in the Slurm job comment.
 |---|---|---|---|---|
 | `logitlens-full` | `examples/gsm8k_round1_logitlens_full.jsonc` | `0e8bc45` | 4136 | starting (replaces 4128) |
 | `logitlens-lora` | `examples/gsm8k_round1_logitlens_lora.jsonc` | `3079c15` | 4137 | starting (replaces 4129) |
-| `jlens-full` | `examples/gsm8k_round1_jlens_full.jsonc` | pending | pending | pending |
+| `jlens-full` | `examples/gsm8k_round1_jlens_full.jsonc` | `42bf0a4` | 4138 | starting (replaces 4130) |
 | `jlens-lora` | `examples/gsm8k_round1_jlens_lora.jsonc` | pending | pending | pending |
 | `hiddenmse-full` | `examples/gsm8k_round1_hiddenmse_full.jsonc` | pending | pending | pending |
 | `hiddenmse-lora` | `examples/gsm8k_round1_hiddenmse_lora.jsonc` | pending | pending | pending |
