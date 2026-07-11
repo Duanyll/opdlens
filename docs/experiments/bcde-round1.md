@@ -186,6 +186,15 @@ still came from the recorded snapshot, but the code import was not immutable.
 Commit `08687af` fixes both batch runners with Python safe-path mode and adds a
 regression test.
 
+A start-time provenance audit covers all 14 retained GSM8K matrix jobs. Jobs
+4144-4147 and 4153/4154 started with the shared HEAD exactly equal to their ledger
+commit. For jobs 4160/4161/4167-4172, every intervening file is confined to the
+DAPO/MATH benchmark registration and parser, DAPO configs/runner, the student-lens
+fit script, generated schema, tests, and documentation. No arm, trainer, base loss,
+optimizer, checkpoint, GSM8K benchmark, or corresponding GSM8K config changed.
+Thus the runner flaw creates a provenance caveat but no scientific setting or code
+drift in any retained GSM8K result.
+
 Jobs 4167/4168 had already started before this discovery. The latest committed
 shared checkouts before their Python starts were `97b76f9` and `407b1a9`,
 respectively. Relative to their recorded commits, the changed files are limited to
