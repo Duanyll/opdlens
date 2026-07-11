@@ -4,7 +4,8 @@ Status: GSM8K barrier 4175 completed successfully. The first ten DAPO/MATH jobs
 4198-4207 all established the same 0.6472 step-0 MATH baseline, then exposed a
 shared base-loss backward-memory failure before step 1. Jobs 4208-4217 then exposed
 a vLLM Mamba-cache startup threshold before evaluation. The adjusted memory-bounded
-profile is being requeued under distinct `-chunk256vllm020` run names.
+profile is submitted as jobs 4218-4227 under distinct `-chunk256vllm020` run names;
+six jobs occupy all 12 available A800s and four remain queued.
 
 ## Dataset identity
 
@@ -184,3 +185,22 @@ block for each of its default 1,024 maximum concurrent sequences and therefore
 failed fast during initialization. Jobs 4208-4217 never reached evaluation or the
 chunked loss. The replacement raises the fraction to 0.20, which remains 4 GiB
 below the original reservation while clearing this deterministic cache threshold.
+
+### Chunk256 / vLLM 0.20 replacements
+
+| Run | Config | Commit | Slurm job | State |
+|---|---|---|---|---|
+| `logits-full-chunk256vllm020` | `examples/dapo17k_math_round1_logits_full.jsonc` | `43f62df` | 4218 | running; replaces 4208 |
+| `logits-lora-chunk256vllm020` | `examples/dapo17k_math_round1_logits_lora.jsonc` | `408ab83` | 4219 | running; replaces 4209 |
+| `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `8ae5a7f` | 4220 | running; replaces 4210 |
+| `logitlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_lora.jsonc` | `fad5d85` | 4221 | running; replaces 4211 |
+| `jlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_jlens_full.jsonc` | `91a0d43` | 4222 | running; replaces 4212 |
+| `jlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_jlens_lora.jsonc` | `e94f206` | 4223 | running; replaces 4213 |
+| `hiddenmse-full-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_full.jsonc` | `99ac47c` | 4224 | queued; replaces 4214 |
+| `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `8ece700` | 4225 | queued; replaces 4215 |
+| `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `cc143ee` | 4226 | queued; replaces 4216 |
+| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `200715c` | 4227 | queued; replaces 4217 |
+
+At 04:04 HKT, jobs 4218-4223 occupied all 12 A800s and jobs 4224-4227 were
+ready in the queue. Every Slurm comment records the matching full commit and run
+name; each job has its own pre-launch commit and immutable snapshot.
