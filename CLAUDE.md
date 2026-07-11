@@ -11,10 +11,10 @@ work from diverging into incomparable results — follow them exactly.
 These are laws, not style preferences. Breaking one is a *scientific* bug — it
 confounds cross-arm comparison — not a matter of taste.
 
-1. **An experiment is a config, not code.** A new experiment is a new example
-   config that differs from the others only in its arm block. Never edit the
-   train/eval loop, rollout, teacher forward, optimizer, or checkpointing to
-   change an experiment.
+1. **An experiment is a config or a new arm, never a spine edit.** Add it as a
+   config differing only in its `arm` block, or a new arm type in the union for
+   genuinely new aux behavior — never by editing the shared train/eval loop,
+   rollout, teacher forward, optimizer, or checkpointing.
 2. **One seam, kept narrow.** The arms differ only in the auxiliary loss;
    everything else is identical for every arm by construction. Do not widen the
    seam, and reuse the shared loss machinery rather than reimplementing it per arm.

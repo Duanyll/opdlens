@@ -1,6 +1,6 @@
-"""Offline Jacobian-lens fit → ``lens.pt`` (arm C artifact).
+"""Offline Jacobian-lens fit → ``lens.pt`` (arm C/E artifact).
 
-Wraps ``opdlens.jlens.fit`` over a calibration prompt set. Run once per teacher
+Wraps ``opdlens.jlens.fit`` over a calibration prompt set. Run once per model
 model + source-layer choice::
 
     uv run python -m opdlens.fit.fit_jlens --model Qwen/Qwen3-8B \
@@ -24,9 +24,9 @@ logger = get_logger(__name__)
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Fit a Jacobian lens for a teacher model."
+        description="Fit a Jacobian lens for a teacher or initial student model."
     )
-    parser.add_argument("--model", required=True, help="Teacher HF model id.")
+    parser.add_argument("--model", required=True, help="HF model id or local path.")
     parser.add_argument(
         "--prompts", required=True, help="Calibration prompts (.jsonl)."
     )

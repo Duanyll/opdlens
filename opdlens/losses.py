@@ -2,8 +2,8 @@
 
 ``opd_base_loss`` is arm A and the single base loss every arm shares (the
 invariant pinned by ``tests/test_spine.py``). ``lens_kl`` is the shared
-vocab-space aux body for arms B/C — they differ only in the teacher readout they
-pass in. ``hidden_mse`` is arm D's aux. All operate on one sequence and mask on
+vocab-space aux body for arms B/C/E — they differ only in the readouts they pass
+in. ``hidden_mse`` is arm D's aux. All operate on one sequence and mask on
 the ``[T]`` output-position ``loss_mask`` (see ``types.RolloutBatch``) with no
 next-token shift.
 """
@@ -128,7 +128,7 @@ def _supervised_index(loss_mask: torch.Tensor, aux_max_tokens: int) -> torch.Ten
 def lens_kl(
     student_hidden: torch.Tensor,
     teacher_hidden: torch.Tensor,
-    unembed_s: Callable[[torch.Tensor], torch.Tensor],
+    student_readout: Callable[[torch.Tensor], torch.Tensor],
     teacher_readout: Callable[[torch.Tensor], torch.Tensor],
     loss_mask: torch.Tensor,
     *,
@@ -136,18 +136,17 @@ def lens_kl(
     aux_max_tokens: int = 512,
     kl: KLDir = "forward",
 ) -> torch.Tensor:
-    """Shared vocab-space aux for arms B/C.
+    """Shared vocab-space aux for arms B/C/E.
 
-    Student side is always the logit-lens ``unembed_s(h_S)``. The ``teacher_readout``
-    operator is the arm's single point of difference — logit-lens (B) is
-    ``unembed_t``, Jacobian-lens (C) is ``h -> unembed_t(J·h)``. Supervised
-    completion positions are subsampled to ``aux_max_tokens`` *before* either
-    readout, so the unembed runs on ``[n, d]``, not ``[T, d]``.
+    B uses plain logit-lens readouts on both sides, C transports only the teacher
+    hidden state, and E transports both sides through their offline-fit Jacobians.
+    Supervised completion positions are subsampled to ``aux_max_tokens`` *before*
+    either readout, so the unembed runs on ``[n, d]``, not ``[T, d]``.
     """
     idx = _supervised_index(loss_mask, aux_max_tokens)
     if idx.numel() == 0:
         return student_hidden.new_zeros(())
-    student_logits = unembed_s(student_hidden[idx])  # [n, V]
+    student_logits = student_readout(student_hidden[idx])  # [n, V]
     teacher_logits = teacher_readout(teacher_hidden[idx])  # [n, V]
     return _directed_kl(teacher_logits, student_logits, temperature, kl).mean()
 

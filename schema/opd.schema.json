@@ -826,6 +826,64 @@
       },
       "title": "MathTrainBenchmark",
       "type": "object"
+    },
+    "SymmetricJLensArm": {
+      "additionalProperties": false,
+      "description": "Arm E \u2014 offline-fit Jacobian-lens readouts for teacher and student.",
+      "properties": {
+        "type": {
+          "const": "symmetric_jlens",
+          "default": "symmetric_jlens",
+          "title": "Type",
+          "type": "string"
+        },
+        "aux_weight": {
+          "default": 0.0,
+          "title": "Aux Weight",
+          "type": "number"
+        },
+        "temperature": {
+          "default": 1.0,
+          "title": "Temperature",
+          "type": "number"
+        },
+        "aux_max_tokens": {
+          "default": 512,
+          "title": "Aux Max Tokens",
+          "type": "integer"
+        },
+        "kl": {
+          "default": "forward",
+          "enum": [
+            "forward",
+            "reverse"
+          ],
+          "title": "Kl",
+          "type": "string"
+        },
+        "teacher_layers": {
+          "default": [],
+          "items": {
+            "type": "integer"
+          },
+          "title": "Teacher Layers",
+          "type": "array"
+        },
+        "student_jacobian_path": {
+          "title": "Student Jacobian Path",
+          "type": "string"
+        },
+        "teacher_jacobian_path": {
+          "title": "Teacher Jacobian Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "student_jacobian_path",
+        "teacher_jacobian_path"
+      ],
+      "title": "SymmetricJLensArm",
+      "type": "object"
     }
   },
   "additionalProperties": false,
@@ -1102,7 +1160,8 @@
           "hidden_mse": "#/$defs/HiddenMseArm",
           "jspace": "#/$defs/JLensArm",
           "logit_lens": "#/$defs/LogitLensArm",
-          "logits": "#/$defs/LogitsArm"
+          "logits": "#/$defs/LogitsArm",
+          "symmetric_jlens": "#/$defs/SymmetricJLensArm"
         },
         "propertyName": "type"
       },
@@ -1118,6 +1177,9 @@
         },
         {
           "$ref": "#/$defs/HiddenMseArm"
+        },
+        {
+          "$ref": "#/$defs/SymmetricJLensArm"
         }
       ],
       "title": "Arm"

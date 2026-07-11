@@ -1,6 +1,6 @@
-"""The fair-comparison guardrail: the four arms share one spine.
+"""The fair-comparison guardrail: the five arms share one spine.
 
-Machine-checks that (1) the four experiment configs differ ONLY in the ``arm``
+Machine-checks that (1) the five experiment configs differ ONLY in the ``arm``
 block, and (2) with ``aux_weight == 0`` every arm gates off its aux entirely, so
 each reduces to the single shared ``opd_base_loss`` — fair comparison is
 structural, not a convention.
@@ -22,10 +22,10 @@ _EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
 def test_configs_differ_only_in_arm():
     configs = {
         name: load_config_file(str(_EXAMPLES / f"arm_{name}.jsonc"))
-        for name in ("a", "b", "c", "d")
+        for name in ("a", "b", "c", "d", "e")
     }
     baseline = {k: v for k, v in configs["a"].items() if k != "arm"}
-    for name in ("b", "c", "d"):
+    for name in ("b", "c", "d", "e"):
         other = {k: v for k, v in configs[name].items() if k != "arm"}
         assert other == baseline, f"arm_{name}.jsonc differs outside the arm block"
 
@@ -47,6 +47,13 @@ def test_aux_weight_zero_gates_off_aux():
             "aux_weight": 0.0,
             "teacher_layers": [8],
             "bridge_path": "x",
+        },
+        {
+            "type": "symmetric_jlens",
+            "aux_weight": 0.0,
+            "teacher_layers": [8],
+            "student_jacobian_path": "x",
+            "teacher_jacobian_path": "x",
         },
     ]
     for spec in specs:

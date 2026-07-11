@@ -1,4 +1,4 @@
-"""OpdTrainer — the one trainer. Four arms, one spine.
+"""OpdTrainer — the one trainer. Five arms, one spine.
 
 Composed from the cohesive mixins; the ONLY per-arm variation is ``self.arm``. The
 ``train_step`` below is byte-identical across arms: rollout → teacher & student

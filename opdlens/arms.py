@@ -1,17 +1,18 @@
-"""The four experiment arms — the single seam where the arms differ.
+"""The five experiment arms — the single seam where the arms differ.
 
 Every arm shares the same rollout / teacher-forward / base OPD loss / eval spine
-(``opdlens.training``). The ONLY per-arm code is ``aux_loss`` below; the four
+(``opdlens.training``). The ONLY per-arm code is ``aux_loss`` below; the five
 bodies are stacked here on purpose so the difference is visible at a glance:
 
 - ``LogitsArm``     (A): no aux — plain OPD.
 - ``LogitLensArm``  (B): teacher **logit-lens** readout ``unembed_t(h)`` → vocab KL.
 - ``JLensArm``      (C): teacher **Jacobian-lens** readout ``unembed_t(h @ Jᵀ)`` → vocab KL.
 - ``HiddenMseArm``  (D): raw-hidden MSE through a frozen bridge (no unembed).
+- ``SymmetricJLensArm`` (E): offline-fit Jacobian-lens readouts on both sides.
 
-B and C differ by exactly one line (the teacher readout); the shared masked-KL
-machinery lives in ``losses.lens_kl``. Arms load their artifacts (``lens.pt`` /
-``bridge.pt``) directly — the trainer never touches the ``jlens`` package.
+B, C, and E share the masked-KL machinery in ``losses.lens_kl`` and differ only
+in their readouts. Arms load their artifacts (``lens.pt`` / ``bridge.pt``)
+directly — the trainer never touches the ``jlens`` package.
 """
 
 from __future__ import annotations
@@ -120,6 +121,13 @@ class JLensArm(BaseArm):
 
     def aux_loss(self, student, teacher, loss_mask, spec, *, unembed_s, unembed_t):
         jacobians = self._load_jacobians()
+        missing = [lt for lt in spec.teacher_layers if lt not in jacobians]
+        if missing:
+            raise ValueError(
+                f"{self.jacobian_path} has no Jacobian for teacher_layers {missing}; "
+                f"fitted source layers are {sorted(jacobians)}. Re-fit the lens with "
+                f"--source-layers matching this arm's teacher_layers."
+            )
         terms: list[torch.Tensor] = []
         for lt, ls in zip(spec.teacher_layers, spec.student_layers, strict=True):
             h = teacher.hidden[lt]
@@ -173,11 +181,97 @@ class HiddenMseArm(BaseArm):
         return self._mean_over_pairs(terms), {}
 
 
+class SymmetricJLensArm(BaseArm):
+    """Arm E — offline-fit Jacobian-lens readouts for teacher and student."""
+
+    type: Literal["symmetric_jlens"] = "symmetric_jlens"
+    student_jacobian_path: str
+    """Lens fit on the frozen student initialization at the mapped layers."""
+    teacher_jacobian_path: str
+    """Lens fit on the frozen teacher at ``teacher_layers``."""
+
+    _student_jacobians: dict[int, torch.Tensor] | None = PrivateAttr(default=None)
+    _teacher_jacobians: dict[int, torch.Tensor] | None = PrivateAttr(default=None)
+
+    def _load_jacobians(self, path: str, *, student: bool) -> dict[int, torch.Tensor]:
+        jacobians = self._student_jacobians if student else self._teacher_jacobians
+        if jacobians is None:
+            ckpt = torch.load(path, map_location="cpu", weights_only=True)
+            if "J" not in ckpt:
+                raise ValueError(f"{path} is not a JacobianLens file")
+            jacobians = ckpt["J"]
+            if student:
+                self._student_jacobians = jacobians
+            else:
+                self._teacher_jacobians = jacobians
+        return jacobians
+
+    @staticmethod
+    def _require_layers(
+        path: str,
+        jacobians: dict[int, torch.Tensor],
+        layers: tuple[int, ...],
+        layer_role: str,
+    ) -> None:
+        missing = [layer for layer in layers if layer not in jacobians]
+        if missing:
+            raise ValueError(
+                f"{path} has no Jacobian for {layer_role} {missing}; fitted source "
+                f"layers are {sorted(jacobians)}. Re-fit the lens with "
+                f"--source-layers matching this arm's mapped layers."
+            )
+
+    def aux_loss(self, student, teacher, loss_mask, spec, *, unembed_s, unembed_t):
+        student_jacobians = self._load_jacobians(
+            self.student_jacobian_path, student=True
+        )
+        teacher_jacobians = self._load_jacobians(
+            self.teacher_jacobian_path, student=False
+        )
+        self._require_layers(
+            self.student_jacobian_path,
+            student_jacobians,
+            spec.student_layers,
+            "mapped student_layers",
+        )
+        self._require_layers(
+            self.teacher_jacobian_path,
+            teacher_jacobians,
+            spec.teacher_layers,
+            "teacher_layers",
+        )
+
+        terms: list[torch.Tensor] = []
+        for lt, ls in zip(spec.teacher_layers, spec.student_layers, strict=True):
+            student_hidden = student.hidden[ls]
+            teacher_hidden = teacher.hidden[lt]
+            student_jac = student_jacobians[ls].to(
+                device=student_hidden.device, dtype=student_hidden.dtype
+            )
+            teacher_jac = teacher_jacobians[lt].to(
+                device=teacher_hidden.device, dtype=teacher_hidden.dtype
+            )
+            terms.append(
+                lens_kl(
+                    student_hidden,
+                    teacher_hidden,
+                    lambda x, jac=student_jac: unembed_s(x @ jac.T),
+                    lambda x, jac=teacher_jac: unembed_t(x @ jac.T),
+                    loss_mask,
+                    temperature=self.temperature,
+                    aux_max_tokens=self.aux_max_tokens,
+                    kl=self.kl,
+                )
+            )
+        return self._mean_over_pairs(terms), {}
+
+
 Arm = Annotated[
     Annotated[LogitsArm, Tag("logits")]
     | Annotated[LogitLensArm, Tag("logit_lens")]
     | Annotated[JLensArm, Tag("jspace")]
-    | Annotated[HiddenMseArm, Tag("hidden_mse")],
+    | Annotated[HiddenMseArm, Tag("hidden_mse")]
+    | Annotated[SymmetricJLensArm, Tag("symmetric_jlens")],
     Discriminator("type"),
 ]
 
@@ -196,6 +290,7 @@ __all__ = [
     "JLensArm",
     "LogitLensArm",
     "LogitsArm",
+    "SymmetricJLensArm",
     "parse_arm",
 ]
 
@@ -232,6 +327,11 @@ if __name__ == "__main__":
         {"type": "logits"},
         {"type": "jspace", "jacobian_path": "x.pt"},
         {"type": "hidden_mse", "bridge_path": "b.pt"},
+        {
+            "type": "symmetric_jlens",
+            "student_jacobian_path": "student-lens.pt",
+            "teacher_jacobian_path": "teacher-lens.pt",
+        },
     ):
         print(f"parsed {conf['type']}: {type(parse_arm(conf)).__name__}")
 
