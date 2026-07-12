@@ -1,12 +1,11 @@
 # DAPO17K to MATH round 1
 
-Status: GSM8K barrier 4175 completed successfully. The first ten DAPO/MATH jobs
-4198-4207 all established the same 0.6472 step-0 MATH baseline, then exposed a
-shared base-loss backward-memory failure before step 1. Jobs 4208-4217 then exposed
-a vLLM Mamba-cache startup threshold before evaluation. The adjusted memory-bounded
-profile uses retained jobs 4218/4219/4221-4224 plus cache-isolated replacements
-4228-4231 under distinct `-chunk256vllm020` run names; six jobs occupy all 12
-available A800s and four remain queued.
+Status: GSM8K barrier 4175 completed successfully. Six current-profile DAPO/MATH
+runs are complete and four are running. The completed B/C results meet the
+predeclared poor-BCE fallback criterion, so legacy BCE jobs 4240-4245 are appended:
+two occupy the four A800s released on node 2 and four remain queued. Together with
+current jobs 4228-4231 on node 1, all 12 available A800s are occupied and the queue
+has a four-job backlog.
 
 ## Dataset identity
 
@@ -67,6 +66,28 @@ is cancelled and replaced under a new run name if its weighted auxiliary/base ra
 is outside the range established by the stable GSM8K runs or if any loss/gradient is
 non-finite.
 
+## Triggered legacy BCE profile
+
+The fallback criterion is the same fixed-step rule used for GSM8K: append, never
+substitute, the legacy B/C/E matrix if a current run falls more than five points
+below its own initialization or finishes more than two pooled standard errors below
+the matching logits baseline. At step 300, B-LoRA is 0.6282 versus A-LoRA 0.6658
+(gap 0.0376; trigger threshold 0.0191), C-full is 0.6462 versus A-full 0.6858
+(gap 0.0396; threshold 0.0189), and C-LoRA is 0.6304 versus A-LoRA 0.6658
+(gap 0.0354; threshold 0.0191). The fallback therefore fires without selecting a
+best checkpoint or waiting for E.
+
+The legacy full profile imports the historical forward-KL base loss (`beta=0`),
+base/rollout temperature 1, 512-token training rollout, global batch 8, AdamW LR
+2e-6 with betas 0.9/0.999 and zero weight decay, and constant LR. No historical
+LoRA recipe exists, so the legacy-LoRA profile is explicitly a hybrid that retains
+the validated 5e-5 adapter LR while importing the other historical settings. Both
+profiles retain the pinned DAPO/MATH datasets, full 5,000-example greedy eval at
+steps 0/100/200/300, two-GPU launch, base-loss chunking, local compile caches, and
+the 0.20 vLLM reservation. B/C/E differ only in their arm block within each
+finetune mode. `--profile` defaults to `current`, and regenerating without the new
+flag is byte-identical to the existing current config.
+
 ## Artifact policy
 
 The teacher lens and bridge are model/layer artifacts and are kept identical across
@@ -84,10 +105,11 @@ attempt.
 
 ## Structural guardrail
 
-Within each finetune mode, the five configs differ only in `arm`, `experiment_name`,
-and `checkpoint_root`. `tests/test_spine.py` validates all configs through
-`OpdTrainer` and compares the remaining spine byte-for-byte. The dataset revisions,
-full-MATH protocol, two-GPU allocation, and LoRA checkpoint policy are also pinned.
+Within each finetune mode, the five current configs and the three legacy BCE configs
+each differ only in `arm`, `experiment_name`, and `checkpoint_root` inside their
+respective profile. `tests/test_spine.py` validates all configs through `OpdTrainer`
+and compares the remaining spine byte-for-byte. The dataset revisions, full-MATH
+protocol, two-GPU allocation, legacy recipe, and LoRA checkpoint policy are pinned.
 
 The 2026-07-12 02:16 HKT config audit passed all eight spine/protocol tests. A
 subsequent exact execution-path probe established that the original `opdlens`
@@ -203,8 +225,8 @@ the cache-isolated runner.
 | `logits-lora-chunk256vllm020` | `examples/dapo17k_math_round1_logits_lora.jsonc` | `408ab83` | 4219 | completed; step-300 acc 0.6658; replaces 4209 |
 | `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `8ae5a7f` | 4220 | failed in shared NFS compile cache; replaces 4210 |
 | `logitlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_lora.jsonc` | `fad5d85` | 4221 | completed; step-300 acc 0.6282; replaces 4211 |
-| `jlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_jlens_full.jsonc` | `91a0d43` | 4222 | final eval running; step-200 acc 0.6446; replaces 4212 |
-| `jlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_jlens_lora.jsonc` | `e94f206` | 4223 | stable at step 287; step-200 acc 0.6322; replaces 4213 |
+| `jlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_jlens_full.jsonc` | `91a0d43` | 4222 | completed; step-300 acc 0.6462; replaces 4212 |
+| `jlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_jlens_lora.jsonc` | `e94f206` | 4223 | completed; step-300 acc 0.6304; replaces 4213 |
 | `hiddenmse-full-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_full.jsonc` | `99ac47c` | 4224 | completed; step-300 acc 0.6488; replaces 4214 |
 | `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `8ece700` | 4225 | cancelled before start for cache-isolated replacement |
 | `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `cc143ee` | 4226 | cancelled before start for cache-isolated replacement |
@@ -218,14 +240,31 @@ name; each job has its own pre-launch commit and immutable snapshot.
 
 | Run | Config | Commit | Slurm job | State |
 |---|---|---|---|---|
-| `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `b0dc53f` | 4228 | stable at step 19; step-0 acc 0.6478; replaces failed 4220 |
-| `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `0e93d89` | 4229 | stable at step 16; step-0 acc 0.6526; replaces unstarted 4225 |
-| `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `1e2551a` | 4230 | stable at step 4; step-0 acc 0.6526; replaces unstarted 4226 |
-| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `58ecd62` | 4231 | started at 08:20 HKT; replaces unstarted 4227 |
+| `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `b0dc53f` | 4228 | stable at step 57; step-0 acc 0.6478; replaces failed 4220 |
+| `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `0e93d89` | 4229 | stable at step 54; step-0 acc 0.6526; replaces unstarted 4225 |
+| `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `1e2551a` | 4230 | stable at step 38; step-0 acc 0.6526; replaces unstarted 4226 |
+| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `58ecd62` | 4231 | stable at step 20; replaces unstarted 4227 |
 
 At 04:12 HKT, jobs 4218/4219/4221-4224 occupied all 12 A800s; jobs 4228-4231
 were ready in the queue. The three cancelled jobs had no start time and consumed
 no GPU. All replacements have matching pre-launch commits, comments, and snapshots.
+
+### Triggered legacy BCE append
+
+| Run | Profile | Config | Commit | Slurm job | State |
+|---|---|---|---|---|---|
+| `logitlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1_logitlens_full_legacy.jsonc` | `7d44085` | 4240 | running; started 08:54 HKT |
+| `logitlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1_logitlens_lora_legacy.jsonc` | `ce36408` | 4241 | running; started 08:55 HKT |
+| `jlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1_jlens_full_legacy.jsonc` | `bc45773` | 4242 | queued |
+| `jlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1_jlens_lora_legacy.jsonc` | `25b3920` | 4243 | queued |
+| `symjlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1_symjlens_full_legacy.jsonc` | `a522055` | 4244 | queued |
+| `symjlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1_symjlens_lora_legacy.jsonc` | `29298cf` | 4245 | queued |
+
+The generator/config implementation is commit `7cf7b0e`. Every row then receives
+its own empty pre-launch commit so that its immutable snapshot and Slurm comment
+have a unique experiment identity even though all six share the same validated
+code and profile. The comments record the full commit, run, train/eval datasets,
+and `profile=legacy`.
 
 At 04:18 HKT, all six running jobs had completed full-MATH step-0 evaluation at
 the identical 0.6454 score and advanced to train step 10-11. The chunked backward
@@ -305,3 +344,16 @@ checkpoint selection. No Trackio alert is present. Over five minutes, the 12
 allocated GPUs average 75-100% utilization, 266-386 W, and 53-66 GiB memory; the
 lowest-utilization pair belongs to a newly started job and remains far above idle
 power.
+
+At 08:48 HKT, C-full and C-LoRA had also completed cleanly at 0.6462 and 0.6304,
+leaving six of ten current-profile runs complete. All three LoRA completions retain
+their step-100/200/300 checkpoints. The four remaining current jobs reached steps
+57/54/38/20 for B-full/D-LoRA/E-full/E-LoRA with finite losses and gradients;
+their weighted auxiliary/base ratios are 0.44x/0.75x/0.67x/1.18x. No new runtime
+error or Trackio alert is present. Node 1's eight allocated GPUs average 82-99%
+utilization, 287-398 W, and 53-67 GiB over five minutes.
+
+The fixed-step B/C gaps then triggered the legacy append described above. At
+08:55 HKT, B-full 4240 and B-LoRA 4241 started on node 2 while C/E jobs 4242-4245
+remained queued. The four current jobs plus two legacy jobs occupy all 12 available
+A800s, and every future two-GPU release already has a recorded experiment waiting.
