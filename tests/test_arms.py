@@ -347,3 +347,54 @@ def test_symmetric_jlens_arm_applies_both_lenses(tmp_path):
         for lt, ls in zip(spec.teacher_layers, spec.student_layers, strict=True)
     ]
     assert torch.allclose(aux, torch.stack(expected_terms).mean())
+
+
+def test_lens_kl_top_k_truncates_to_teacher_head():
+    torch.manual_seed(0)
+    d, v, seq = 8, 40, 6
+    us, ut = torch.nn.Linear(d, v), torch.nn.Linear(d, v)
+    student_h, teacher_h = torch.randn(seq, d), torch.randn(seq, d)
+    mask = torch.ones(seq, dtype=torch.bool)
+
+    full = lens_kl(student_h, teacher_h, us, ut, mask, aux_max_tokens=0)
+    # k >= V is a no-op: the KL is permutation-invariant over the full vocab.
+    for k in (v, v + 100):
+        same = lens_kl(student_h, teacher_h, us, ut, mask, aux_max_tokens=0, top_k=k)
+        assert torch.allclose(full, same, atol=1e-5)
+    # A real truncation restricts the support, stays finite, and shifts the value.
+    trunc = lens_kl(student_h, teacher_h, us, ut, mask, aux_max_tokens=0, top_k=5)
+    assert torch.isfinite(trunc)
+    assert not torch.allclose(full, trunc)
+
+
+def test_logit_lens_arm_threads_top_k():
+    d, v = 16, 32
+    us, ut = torch.nn.Linear(d, v), torch.nn.Linear(d, v)
+    arm = parse_arm(
+        {
+            "type": "logit_lens",
+            "aux_weight": 0.1,
+            "aux_top_k": 8,
+            "aux_max_tokens": 0,
+            "teacher_layers": [2, 4],
+        }
+    )
+    assert arm.aux_top_k == 8
+    spec = arm.capture_spec(4, 6)
+    student, teacher, mask = _readouts(spec, d=d)
+    aux, _ = arm.aux_loss(student, teacher, mask, spec, unembed_s=us, unembed_t=ut)
+    expected = torch.stack(
+        [
+            lens_kl(
+                student.hidden[ls],
+                teacher.hidden[lt],
+                us,
+                ut,
+                mask,
+                aux_max_tokens=0,
+                top_k=8,
+            )
+            for lt, ls in zip(spec.teacher_layers, spec.student_layers, strict=True)
+        ]
+    ).mean()
+    assert torch.allclose(aux, expected)

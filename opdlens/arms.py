@@ -45,6 +45,10 @@ class BaseArm(BaseModel):
     aux_token_policy: Literal["compat", "shared"] = "compat"
     """``compat`` preserves pre-knob per-arm sampling; ``shared`` caps once per sequence."""
     kl: KLDir = "forward"
+    aux_top_k: int = 0
+    """Truncate the lens-KL to the teacher's per-position top-k vocab ids before the
+    divergence (``0`` = full vocab). Consumed by the lens arms (B/C/E) via
+    ``losses.lens_kl``; ignored by A (no aux) and D (hidden MSE, no vocab space)."""
     teacher_layers: tuple[int, ...] = ()
     """Teacher block indices to supervise (empty for arm A)."""
 
@@ -108,6 +112,7 @@ class LogitLensArm(BaseArm):
                 temperature=self.temperature,
                 aux_max_tokens=self.aux_max_tokens,
                 kl=self.kl,
+                top_k=self.aux_top_k,
                 token_index=token_index,
             )
             for lt, ls in zip(spec.teacher_layers, spec.student_layers, strict=True)
@@ -160,6 +165,7 @@ class JLensArm(BaseArm):
                     temperature=self.temperature,
                     aux_max_tokens=self.aux_max_tokens,
                     kl=self.kl,
+                    top_k=self.aux_top_k,
                     token_index=token_index,
                 )
             )
@@ -332,6 +338,7 @@ class SymmetricJLensArm(BaseArm):
                     temperature=self.temperature,
                     aux_max_tokens=self.aux_max_tokens,
                     kl=self.kl,
+                    top_k=self.aux_top_k,
                     token_index=token_index,
                 )
             )
