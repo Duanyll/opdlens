@@ -5,8 +5,8 @@
   // difference is expected and is the point of running both.
   "$schema": "../schema/opd.schema.json",
   "launch": { "type": "opd", "devices": 1, "env": { "HF_HUB_OFFLINE": "1" } },
-  "experiment_name": "repro-gkd-2b-lora",
-  // Project = dataset, so a dataset's arms (A/B/C/D) group together for comparison.
+  "experiment_name": "logits-lora",  // arm A (logits) + LoRA — see docs/naming.md
+  // Project = dataset, so a dataset's arms (A/B/C/D/E) group together for comparison.
   "trackio_project": "opdlens-gsm8k",
   "seed": 42,
 
@@ -54,7 +54,9 @@
   "rollouts_per_prompt": 1,
 
   "train_steps": 300,
-  "eval_steps": 100,
+  // Eval every 50 (see repro_gkd_2b_full.jsonc): ~30s each (~3% of the run), doubles
+  // curve resolution while keeping the baseline's 0/100/200/300 points on the grid.
+  "eval_steps": 50,
   "eval_at_start": true,
   "checkpoint_interval": 100,
   "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/repro-gkd-2b-lora",
