@@ -110,18 +110,47 @@ def apply_dataset_spine(config: dict[str, Any]) -> None:
     config["launch"]["env"]["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
 
+def apply_legacy_profile(config: dict[str, Any], finetune: str) -> None:
+    """Apply the historical jlens recipe while retaining the DAPO/MATH spine."""
+    config.update(
+        {
+            "base_beta": 0.0,
+            "base_temperature": 1.0,
+            "rollout_temperature": 1.0,
+            "rollout_top_p": 1.0,
+            "rollout_max_tokens": 512,
+            "global_batch_size": 8,
+            "scheduler_config": {"class_name": "ConstantLR", "factor": 1.0},
+        }
+    )
+    config["optimizer_config"] = {
+        "class_name": "AdamW",
+        "lr": 2e-6 if finetune == "full" else 5e-5,
+        "betas": [0.9, 0.999],
+        "weight_decay": 0.0,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--arm", choices="abcde", required=True)
     parser.add_argument("--finetune", choices=("full", "lora"), required=True)
+    parser.add_argument("--profile", choices=("current", "legacy"), default="current")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
+
+    if args.profile == "legacy" and args.arm not in "bce":
+        parser.error("the legacy fallback matrix contains only arms B/C/E")
 
     baseline = load_config_file(f"examples/repro_gkd_2b_{args.finetune}.jsonc")
     config = deepcopy(baseline)
     apply_dataset_spine(config)
     tag, config["arm"] = arm_config(args.arm)
-    run_name = f"{tag}-{args.finetune}-{MEMORY_PROFILE}"
+    if args.profile == "legacy":
+        apply_legacy_profile(config, args.finetune)
+        run_name = f"{tag}-{args.finetune}-legacy-{MEMORY_PROFILE}"
+    else:
+        run_name = f"{tag}-{args.finetune}-{MEMORY_PROFILE}"
     config["experiment_name"] = run_name
     config["checkpoint_root"] = f"{CHECKPOINT_ROOT}/{run_name}"
     if args.finetune == "lora":
