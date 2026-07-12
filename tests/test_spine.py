@@ -17,7 +17,9 @@ from opdlens.losses import opd_base_loss
 from opdlens.training import OpdTrainer
 from opdlens.utils.config import load_config_file
 
-_EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
+_ROOT = Path(__file__).resolve().parent.parent
+_EXAMPLES = _ROOT / "examples"
+_EXPERIMENTS = _ROOT / "experiments"
 
 
 def test_configs_differ_only_in_arm():
@@ -36,7 +38,7 @@ def test_legacy_bce_configs_share_one_spine_and_validate():
     for finetune in ("full", "lora"):
         configs = {
             arm: load_config_file(
-                str(_EXAMPLES / "gsm8k_round1" / f"{arm}_{finetune}_legacy.jsonc")
+                str(_EXPERIMENTS / "gsm8k_round1" / f"{arm}_{finetune}_legacy.jsonc")
             )
             for arm in ("logitlens", "jlens", "symjlens")
         }
@@ -58,7 +60,7 @@ def test_legacy_bce_configs_share_one_spine_and_validate():
 def test_legacy_bce_profile_is_pinned():
     for finetune, expected_lr in (("full", 2e-6), ("lora", 5e-5)):
         config = load_config_file(
-            str(_EXAMPLES / "gsm8k_round1" / f"logitlens_{finetune}_legacy.jsonc")
+            str(_EXPERIMENTS / "gsm8k_round1" / f"logitlens_{finetune}_legacy.jsonc")
         )
         assert config["base_beta"] == 0.0
         assert config["base_temperature"] == 1.0
@@ -88,7 +90,7 @@ def test_dapo_math_matrix_shares_one_spine_and_validates():
     for finetune in ("full", "lora"):
         configs = {
             arm: load_config_file(
-                str(_EXAMPLES / "dapo17k_math_round1" / f"{arm}_{finetune}.jsonc")
+                str(_EXPERIMENTS / "dapo17k_math_round1" / f"{arm}_{finetune}.jsonc")
             )
             for arm in ("logits", "logitlens", "jlens", "hiddenmse", "symjlens")
         }
@@ -110,7 +112,7 @@ def test_dapo_math_matrix_shares_one_spine_and_validates():
 def test_dapo_math_matrix_protocol_is_pinned():
     for finetune in ("full", "lora"):
         config = load_config_file(
-            str(_EXAMPLES / "dapo17k_math_round1" / f"logits_{finetune}.jsonc")
+            str(_EXPERIMENTS / "dapo17k_math_round1" / f"logits_{finetune}.jsonc")
         )
         train = config["train_benchmark"]
         evaluation = config["eval_benchmarks"][0]
@@ -145,7 +147,9 @@ def test_dapo_math_legacy_bce_configs_share_one_spine_and_validate():
         configs = {
             arm: load_config_file(
                 str(
-                    _EXAMPLES / "dapo17k_math_round1" / f"{arm}_{finetune}_legacy.jsonc"
+                    _EXPERIMENTS
+                    / "dapo17k_math_round1"
+                    / f"{arm}_{finetune}_legacy.jsonc"
                 )
             )
             for arm in ("logitlens", "jlens", "symjlens")
@@ -169,7 +173,9 @@ def test_dapo_math_legacy_bce_profile_is_pinned():
     for finetune, expected_lr in (("full", 2e-6), ("lora", 5e-5)):
         config = load_config_file(
             str(
-                _EXAMPLES / "dapo17k_math_round1" / f"logitlens_{finetune}_legacy.jsonc"
+                _EXPERIMENTS
+                / "dapo17k_math_round1"
+                / f"logitlens_{finetune}_legacy.jsonc"
             )
         )
         assert config["base_beta"] == 0.0

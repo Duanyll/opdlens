@@ -3,7 +3,7 @@
   //   Qwen3.5-9B teacher -> Qwen3.5-2B student, GSM8K, JSD(beta=0.5) @ temp 0.9.
   // Target curve (EvalScope 4-shot GSM8K, pass@1): 0.7597 -> 0.7968 -> 0.8188 -> 0.8332
   // at steps 0/100/200/300. This is the FULL fine-tune variant (see *_lora for LoRA).
-  "$schema": "../schema/opd.schema.json",
+  "$schema": "../../schema/opd.schema.json",
   "launch": { "type": "opd", "devices": 1, "env": { "HF_HUB_OFFLINE": "1" } },
   "experiment_name": "logits-full",  // arm A (logits) + full FT — see docs/naming.md
   // Project = dataset, so a dataset's arms (A/B/C/D/E) group together for comparison.

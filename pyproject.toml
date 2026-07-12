@@ -66,7 +66,7 @@ ignore = [
     "E741", # ambiguous variable name
     "B027", # empty function in abstract class
 ]
-exclude = ["examples/**", "opdlens/jlens/**"]
+exclude = ["examples/**", "experiments/**", "opdlens/jlens/**"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10

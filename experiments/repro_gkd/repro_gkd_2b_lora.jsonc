@@ -3,7 +3,7 @@
   // to repro_gkd_2b_full.jsonc EXCEPT the student's `lora` block and the LoRA lr (5e-5,
   // ms-swift's documented value). LoRA acts as a regularizer — a full-vs-LoRA curve
   // difference is expected and is the point of running both.
-  "$schema": "../schema/opd.schema.json",
+  "$schema": "../../schema/opd.schema.json",
   "launch": { "type": "opd", "devices": 1, "env": { "HF_HUB_OFFLINE": "1" } },
   "experiment_name": "logits-lora",  // arm A (logits) + LoRA — see docs/naming.md
   // Project = dataset, so a dataset's arms (A/B/C/D/E) group together for comparison.

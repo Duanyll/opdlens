@@ -18,15 +18,6 @@ The scientific question: does a **lens readout** (B/C/E) beat plain OPD (A) and
 raw-hidden MSE (D), does the Jacobian-lens (C) beat the logit-lens (B), and does
 symmetric representational readout (E) improve on C's asymmetric readout?
 
-**Arm E (symmetric J-lens; formerly planned as C′).** Like C, but the *student*
-is also read through its own **offline-fit** Jacobian-lens:
-`KL(unembed_t(J_t·h_t) ‖ unembed_s(J_s·h_s))`, vs C's asymmetric
-`KL(teacher_jlens ‖ student_logit_lens)`. `J_s` is fit once on the frozen init
-checkpoint at the mapped student layers (loaded, never fit inline). This tests
-*representational-content* alignment, so it is a **parallel axis**, not a
-one-variable step on the A→B→C ladder. Dynamic re-fit of `J_s` is out of scope
-(cost dominates training; a moving target makes the loss non-stationary).
-
 ## Design
 
 One `OpdTrainer` composed from cohesive mixins (rollout / teacher / generation /
@@ -38,3 +29,23 @@ in-process vLLM samples on-policy; multi-GPU DDP now, FSDP2 next.
 `tests/test_spine.py` pins the invariant: with `aux_weight=0` every arm reduces
 to identical base OPD, and experiment configs differ only in the `arm` block —
 fair comparison is structural, not a convention.
+
+## Layout
+
+- `opdlens/` — the package (trainer, arms, benchmarks, losses, offline-fit tooling).
+- `examples/` — minimal, illustrative configs only: one per arm (`arm_a`…`arm_e`)
+  plus `smoke.jsonc`. Meant to be read and copied, not to record a study.
+- `experiments/` — the actual research config matrices, **one subdirectory per
+  round** (`experiments/gsm8k_round1/`, `experiments/dapo17k_math_round1/`,
+  `experiments/repro_gkd/`). Each `.jsonc` is a committed, self-contained run spec
+  and is the source of truth — the scripts that generated them are intentionally
+  **not** tracked (recover from git history if a matrix ever needs regenerating).
+- `docs/experiments/<round>.md` — the write-up and per-run log (job ids, commits,
+  results) for the matching `experiments/<round>/`.
+- `scripts/run.sbatch <config.jsonc> [<commit>]` — the **single** launcher. It
+  archives the repo at `<commit>` (default `HEAD`) into an immutable snapshot and
+  trains from it, exporting `OPDLENS_EXPERIMENT_COMMIT` so the code version lands
+  in trackio; torchrun is sized to the GPUs Slurm allocated. Override resources on
+  the sbatch line, e.g.
+  `sbatch -J logitlens-full scripts/run.sbatch experiments/dapo17k_math_round1/logitlens_full.jsonc`.
+  (`scripts/` otherwise holds only offline-fit helpers such as `fit_student_jlens.sh`.)

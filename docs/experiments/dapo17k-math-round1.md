@@ -53,7 +53,7 @@ MATH accuracy must be labelled partly in-distribution rather than a clean OOD sc
   5,000 rows; there is no best-step selection.
 - LoRA preserves every evaluated trained state (100/200/300) and disables rotation.
   Full fine-tuning retains the 100-step checkpoint cadence.
-- Jobs launch through `scripts/run_dapo_math.sh`, an immutable Git snapshot runner
+- Jobs launch through `scripts/run.sbatch`, an immutable Git snapshot runner
   with two GPUs and a 24-hour limit (within the a800 partition's three-day cap).
   Python safe-path mode prevents the shared checkout from shadowing snapshot code.
   The runner intentionally does not use `headless-tui-run`.
@@ -175,31 +175,31 @@ All ten jobs remained dependency-blocked until barrier 4175 completed at 03:22 H
 
 | Run | Config | Commit | Slurm job | State |
 |---|---|---|---|---|
-| `logits-full` | `examples/dapo17k_math_round1/logits_full.jsonc` | `4a37183` | 4198 | failed before step 1: base-loss backward OOM after step-0 eval |
-| `logits-lora` | `examples/dapo17k_math_round1/logits_lora.jsonc` | `9745def` | 4199 | failed before step 1: same backward OOM |
-| `logitlens-full` | `examples/dapo17k_math_round1/logitlens_full.jsonc` | `239a2f2` | 4200 | failed before step 1: same backward OOM |
-| `logitlens-lora` | `examples/dapo17k_math_round1/logitlens_lora.jsonc` | `6cc907d` | 4201 | failed before step 1: same backward OOM |
-| `jlens-full` | `examples/dapo17k_math_round1/jlens_full.jsonc` | `f4d09fc` | 4202 | failed before step 1: same backward OOM |
-| `jlens-lora` | `examples/dapo17k_math_round1/jlens_lora.jsonc` | `32b2396` | 4203 | failed before step 1: same backward OOM |
-| `hiddenmse-full` | `examples/dapo17k_math_round1/hiddenmse_full.jsonc` | `3ec201c` | 4204 | failed before step 1: same backward OOM |
-| `hiddenmse-lora` | `examples/dapo17k_math_round1/hiddenmse_lora.jsonc` | `051ec10` | 4205 | failed before step 1: same backward OOM |
-| `symjlens-full` | `examples/dapo17k_math_round1/symjlens_full.jsonc` | `45d5113` | 4206 | failed before step 1: same backward OOM |
-| `symjlens-lora` | `examples/dapo17k_math_round1/symjlens_lora.jsonc` | `2a45abf` | 4207 | failed before step 1: same backward OOM |
+| `logits-full` | `experiments/dapo17k_math_round1/logits_full.jsonc` | `4a37183` | 4198 | failed before step 1: base-loss backward OOM after step-0 eval |
+| `logits-lora` | `experiments/dapo17k_math_round1/logits_lora.jsonc` | `9745def` | 4199 | failed before step 1: same backward OOM |
+| `logitlens-full` | `experiments/dapo17k_math_round1/logitlens_full.jsonc` | `239a2f2` | 4200 | failed before step 1: same backward OOM |
+| `logitlens-lora` | `experiments/dapo17k_math_round1/logitlens_lora.jsonc` | `6cc907d` | 4201 | failed before step 1: same backward OOM |
+| `jlens-full` | `experiments/dapo17k_math_round1/jlens_full.jsonc` | `f4d09fc` | 4202 | failed before step 1: same backward OOM |
+| `jlens-lora` | `experiments/dapo17k_math_round1/jlens_lora.jsonc` | `32b2396` | 4203 | failed before step 1: same backward OOM |
+| `hiddenmse-full` | `experiments/dapo17k_math_round1/hiddenmse_full.jsonc` | `3ec201c` | 4204 | failed before step 1: same backward OOM |
+| `hiddenmse-lora` | `experiments/dapo17k_math_round1/hiddenmse_lora.jsonc` | `051ec10` | 4205 | failed before step 1: same backward OOM |
+| `symjlens-full` | `experiments/dapo17k_math_round1/symjlens_full.jsonc` | `45d5113` | 4206 | failed before step 1: same backward OOM |
+| `symjlens-lora` | `experiments/dapo17k_math_round1/symjlens_lora.jsonc` | `2a45abf` | 4207 | failed before step 1: same backward OOM |
 
 ### Chunk256 / vLLM 0.18 startup attempt
 
 | Run | Config | Commit | Slurm job | State |
 |---|---|---|---|---|
-| `logits-full-chunk256` | `examples/dapo17k_math_round1/logits_full.jsonc` | `00449a4` | 4208 | failed during vLLM init; replaces 4198 |
-| `logits-lora-chunk256` | `examples/dapo17k_math_round1/logits_lora.jsonc` | `9ab65c4` | 4209 | failed during vLLM init; replaces 4199 |
-| `logitlens-full-chunk256` | `examples/dapo17k_math_round1/logitlens_full.jsonc` | `c95322d` | 4210 | failed during vLLM init; replaces 4200 |
-| `logitlens-lora-chunk256` | `examples/dapo17k_math_round1/logitlens_lora.jsonc` | `9bfd254` | 4211 | failed during vLLM init; replaces 4201 |
-| `jlens-full-chunk256` | `examples/dapo17k_math_round1/jlens_full.jsonc` | `eb9d1bf` | 4212 | failed during vLLM init; replaces 4202 |
-| `jlens-lora-chunk256` | `examples/dapo17k_math_round1/jlens_lora.jsonc` | `85c1e79` | 4213 | failed during vLLM init; replaces 4203 |
-| `hiddenmse-full-chunk256` | `examples/dapo17k_math_round1/hiddenmse_full.jsonc` | `3fa5683` | 4214 | failed during vLLM init; replaces 4204 |
-| `hiddenmse-lora-chunk256` | `examples/dapo17k_math_round1/hiddenmse_lora.jsonc` | `2a5c062` | 4215 | failed during vLLM init; replaces 4205 |
-| `symjlens-full-chunk256` | `examples/dapo17k_math_round1/symjlens_full.jsonc` | `36dd42b` | 4216 | failed during vLLM init; replaces 4206 |
-| `symjlens-lora-chunk256` | `examples/dapo17k_math_round1/symjlens_lora.jsonc` | `8391803` | 4217 | failed during vLLM init; replaces 4207 |
+| `logits-full-chunk256` | `experiments/dapo17k_math_round1/logits_full.jsonc` | `00449a4` | 4208 | failed during vLLM init; replaces 4198 |
+| `logits-lora-chunk256` | `experiments/dapo17k_math_round1/logits_lora.jsonc` | `9ab65c4` | 4209 | failed during vLLM init; replaces 4199 |
+| `logitlens-full-chunk256` | `experiments/dapo17k_math_round1/logitlens_full.jsonc` | `c95322d` | 4210 | failed during vLLM init; replaces 4200 |
+| `logitlens-lora-chunk256` | `experiments/dapo17k_math_round1/logitlens_lora.jsonc` | `9bfd254` | 4211 | failed during vLLM init; replaces 4201 |
+| `jlens-full-chunk256` | `experiments/dapo17k_math_round1/jlens_full.jsonc` | `eb9d1bf` | 4212 | failed during vLLM init; replaces 4202 |
+| `jlens-lora-chunk256` | `experiments/dapo17k_math_round1/jlens_lora.jsonc` | `85c1e79` | 4213 | failed during vLLM init; replaces 4203 |
+| `hiddenmse-full-chunk256` | `experiments/dapo17k_math_round1/hiddenmse_full.jsonc` | `3fa5683` | 4214 | failed during vLLM init; replaces 4204 |
+| `hiddenmse-lora-chunk256` | `experiments/dapo17k_math_round1/hiddenmse_lora.jsonc` | `2a5c062` | 4215 | failed during vLLM init; replaces 4205 |
+| `symjlens-full-chunk256` | `experiments/dapo17k_math_round1/symjlens_full.jsonc` | `36dd42b` | 4216 | failed during vLLM init; replaces 4206 |
+| `symjlens-lora-chunk256` | `experiments/dapo17k_math_round1/symjlens_lora.jsonc` | `8391803` | 4217 | failed during vLLM init; replaces 4207 |
 
 At 03:52 HKT, jobs 4208-4213 occupied all 12 available A800s across nodes 1/2;
 jobs 4214-4217 followed immediately as slots freed. Slurm comments match every
@@ -245,16 +245,16 @@ the cache-isolated runner.
 
 | Run | Config | Commit | Slurm job | State |
 |---|---|---|---|---|
-| `logits-full-chunk256vllm020` | `examples/dapo17k_math_round1/logits_full.jsonc` | `43f62df` | 4218 | completed; step-300 acc 0.6858; replaces 4208 |
-| `logits-lora-chunk256vllm020` | `examples/dapo17k_math_round1/logits_lora.jsonc` | `408ab83` | 4219 | completed; step-300 acc 0.6658; replaces 4209 |
-| `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1/logitlens_full.jsonc` | `8ae5a7f` | 4220 | failed in shared NFS compile cache; replaces 4210 |
-| `logitlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1/logitlens_lora.jsonc` | `fad5d85` | 4221 | completed; step-300 acc 0.6282; replaces 4211 |
-| `jlens-full-chunk256vllm020` | `examples/dapo17k_math_round1/jlens_full.jsonc` | `91a0d43` | 4222 | completed; step-300 acc 0.6462; replaces 4212 |
-| `jlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1/jlens_lora.jsonc` | `e94f206` | 4223 | completed; step-300 acc 0.6304; replaces 4213 |
-| `hiddenmse-full-chunk256vllm020` | `examples/dapo17k_math_round1/hiddenmse_full.jsonc` | `99ac47c` | 4224 | completed; step-300 acc 0.6488; replaces 4214 |
-| `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1/hiddenmse_lora.jsonc` | `8ece700` | 4225 | cancelled before start for cache-isolated replacement |
-| `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1/symjlens_full.jsonc` | `cc143ee` | 4226 | cancelled before start for cache-isolated replacement |
-| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1/symjlens_lora.jsonc` | `200715c` | 4227 | cancelled before start for cache-isolated replacement |
+| `logits-full-chunk256vllm020` | `experiments/dapo17k_math_round1/logits_full.jsonc` | `43f62df` | 4218 | completed; step-300 acc 0.6858; replaces 4208 |
+| `logits-lora-chunk256vllm020` | `experiments/dapo17k_math_round1/logits_lora.jsonc` | `408ab83` | 4219 | completed; step-300 acc 0.6658; replaces 4209 |
+| `logitlens-full-chunk256vllm020` | `experiments/dapo17k_math_round1/logitlens_full.jsonc` | `8ae5a7f` | 4220 | failed in shared NFS compile cache; replaces 4210 |
+| `logitlens-lora-chunk256vllm020` | `experiments/dapo17k_math_round1/logitlens_lora.jsonc` | `fad5d85` | 4221 | completed; step-300 acc 0.6282; replaces 4211 |
+| `jlens-full-chunk256vllm020` | `experiments/dapo17k_math_round1/jlens_full.jsonc` | `91a0d43` | 4222 | completed; step-300 acc 0.6462; replaces 4212 |
+| `jlens-lora-chunk256vllm020` | `experiments/dapo17k_math_round1/jlens_lora.jsonc` | `e94f206` | 4223 | completed; step-300 acc 0.6304; replaces 4213 |
+| `hiddenmse-full-chunk256vllm020` | `experiments/dapo17k_math_round1/hiddenmse_full.jsonc` | `99ac47c` | 4224 | completed; step-300 acc 0.6488; replaces 4214 |
+| `hiddenmse-lora-chunk256vllm020` | `experiments/dapo17k_math_round1/hiddenmse_lora.jsonc` | `8ece700` | 4225 | cancelled before start for cache-isolated replacement |
+| `symjlens-full-chunk256vllm020` | `experiments/dapo17k_math_round1/symjlens_full.jsonc` | `cc143ee` | 4226 | cancelled before start for cache-isolated replacement |
+| `symjlens-lora-chunk256vllm020` | `experiments/dapo17k_math_round1/symjlens_lora.jsonc` | `200715c` | 4227 | cancelled before start for cache-isolated replacement |
 
 At 04:04 HKT, jobs 4218-4223 occupied all 12 A800s and jobs 4224-4227 were
 ready in the queue. Every Slurm comment records the matching full commit and run
@@ -264,10 +264,10 @@ name; each job has its own pre-launch commit and immutable snapshot.
 
 | Run | Config | Commit | Slurm job | State |
 |---|---|---|---|---|
-| `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1/logitlens_full.jsonc` | `b0dc53f` | 4228 | completed; step-300 acc 0.6610; replaces failed 4220 |
-| `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1/hiddenmse_lora.jsonc` | `0e93d89` | 4229 | completed; step-300 acc 0.6304; replaces unstarted 4225 |
-| `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1/symjlens_full.jsonc` | `1e2551a` | 4230 | completed; step-300 acc 0.6570; replaces unstarted 4226 |
-| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1/symjlens_lora.jsonc` | `58ecd62` | 4231 | completed; step-300 acc 0.6392; replaces unstarted 4227 |
+| `logitlens-full-chunk256vllm020` | `experiments/dapo17k_math_round1/logitlens_full.jsonc` | `b0dc53f` | 4228 | completed; step-300 acc 0.6610; replaces failed 4220 |
+| `hiddenmse-lora-chunk256vllm020` | `experiments/dapo17k_math_round1/hiddenmse_lora.jsonc` | `0e93d89` | 4229 | completed; step-300 acc 0.6304; replaces unstarted 4225 |
+| `symjlens-full-chunk256vllm020` | `experiments/dapo17k_math_round1/symjlens_full.jsonc` | `1e2551a` | 4230 | completed; step-300 acc 0.6570; replaces unstarted 4226 |
+| `symjlens-lora-chunk256vllm020` | `experiments/dapo17k_math_round1/symjlens_lora.jsonc` | `58ecd62` | 4231 | completed; step-300 acc 0.6392; replaces unstarted 4227 |
 
 At 04:12 HKT, jobs 4218/4219/4221-4224 occupied all 12 A800s; jobs 4228-4231
 were ready in the queue. The three cancelled jobs had no start time and consumed
@@ -277,12 +277,12 @@ no GPU. All replacements have matching pre-launch commits, comments, and snapsho
 
 | Run | Profile | Config | Commit | Slurm job | State |
 |---|---|---|---|---|---|
-| `logitlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1/logitlens_full_legacy.jsonc` | `7d44085` | 4240 | completed; step-300 acc 0.6410 |
-| `logitlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1/logitlens_lora_legacy.jsonc` | `ce36408` | 4241 | completed; step-300 acc 0.6620 |
-| `jlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1/jlens_full_legacy.jsonc` | `bc45773` | 4242 | completed; step-300 acc 0.6462 |
-| `jlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1/jlens_lora_legacy.jsonc` | `25b3920` | 4243 | completed; step-300 acc 0.6390 |
-| `symjlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1/symjlens_full_legacy.jsonc` | `a522055` | 4244 | completed; step-300 acc 0.6418 |
-| `symjlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1/symjlens_lora_legacy.jsonc` | `29298cf` | 4245 | completed; step-300 acc 0.6278 |
+| `logitlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `experiments/dapo17k_math_round1/logitlens_full_legacy.jsonc` | `7d44085` | 4240 | completed; step-300 acc 0.6410 |
+| `logitlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `experiments/dapo17k_math_round1/logitlens_lora_legacy.jsonc` | `ce36408` | 4241 | completed; step-300 acc 0.6620 |
+| `jlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `experiments/dapo17k_math_round1/jlens_full_legacy.jsonc` | `bc45773` | 4242 | completed; step-300 acc 0.6462 |
+| `jlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `experiments/dapo17k_math_round1/jlens_lora_legacy.jsonc` | `25b3920` | 4243 | completed; step-300 acc 0.6390 |
+| `symjlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `experiments/dapo17k_math_round1/symjlens_full_legacy.jsonc` | `a522055` | 4244 | completed; step-300 acc 0.6418 |
+| `symjlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `experiments/dapo17k_math_round1/symjlens_lora_legacy.jsonc` | `29298cf` | 4245 | completed; step-300 acc 0.6278 |
 
 The generator/config implementation is commit `7cf7b0e`. Every row then receives
 its own empty pre-launch commit so that its immutable snapshot and Slurm comment
