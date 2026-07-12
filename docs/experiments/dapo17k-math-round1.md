@@ -1,11 +1,10 @@
 # DAPO17K to MATH round 1
 
-Status: GSM8K barrier 4175 completed successfully. Nine current-profile DAPO/MATH
-runs are complete and one is running. The completed B/C results met the
-predeclared poor-BCE fallback criterion, so legacy BCE jobs 4240-4245 were appended:
-all six are now complete. Current jobs 4228-4231 occupy eight A800s on node 1;
-every other matrix entry is complete and there is no unsubmitted experiment left
-in this stage.
+Status: complete. GSM8K barrier 4175, all ten current-profile DAPO/MATH runs, and
+all six triggered legacy BCE runs completed successfully. The completed B/C
+results met the predeclared poor-BCE fallback criterion, so jobs 4240-4245 were
+appended rather than substituted. Every retained experiment has a fixed step-300
+result, and there is no unsubmitted experiment left in this stage.
 
 ## Dataset identity
 
@@ -87,6 +86,31 @@ steps 0/100/200/300, two-GPU launch, base-loss chunking, local compile caches, a
 the 0.20 vLLM reservation. B/C/E differ only in their arm block within each
 finetune mode. `--profile` defaults to `current`, and regenerating without the new
 flag is byte-identical to the existing current config.
+
+## Fixed-step results
+
+These are the predeclared step-300 full-MATH results; no checkpoint was selected
+post hoc.
+
+| Current arm | Full | LoRA |
+|---|---:|---:|
+| A: logits | 0.6858 | 0.6658 |
+| B: logit lens | 0.6610 | 0.6282 |
+| C: Jacobian lens | 0.6462 | 0.6304 |
+| D: hidden MSE | 0.6488 | 0.6304 |
+| E: symmetric Jacobian lens | 0.6570 | 0.6392 |
+
+| Triggered legacy arm | Full | LoRA hybrid |
+|---|---:|---:|
+| B: logit lens | 0.6410 | 0.6620 |
+| C: Jacobian lens | 0.6462 | 0.6390 |
+| E: symmetric Jacobian lens | 0.6418 | 0.6278 |
+
+The anticipated ordering with D below every B/C/E variant does not hold at the
+fixed endpoint. D-full is above C-full but below B/E-full; D-LoRA ties C-LoRA,
+is above B-LoRA, and is below E-LoRA. All current auxiliary arms remain below the
+matching A baseline on MATH at step 300. The legacy fallback helps B-LoRA and
+C-LoRA relative to their current profiles, but not their full runs or E.
 
 ## Artifact policy
 
@@ -243,7 +267,7 @@ name; each job has its own pre-launch commit and immutable snapshot.
 | `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `b0dc53f` | 4228 | completed; step-300 acc 0.6610; replaces failed 4220 |
 | `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `0e93d89` | 4229 | completed; step-300 acc 0.6304; replaces unstarted 4225 |
 | `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `1e2551a` | 4230 | completed; step-300 acc 0.6570; replaces unstarted 4226 |
-| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `58ecd62` | 4231 | stable at step 276; step-200 acc 0.6460; replaces unstarted 4227 |
+| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `58ecd62` | 4231 | completed; step-300 acc 0.6392; replaces unstarted 4227 |
 
 At 04:12 HKT, jobs 4218/4219/4221-4224 occupied all 12 A800s; jobs 4228-4231
 were ready in the queue. The three cancelled jobs had no start time and consumed
@@ -436,3 +460,16 @@ At 12:42 HKT, current E-full completed cleanly at 0.6570 with finite final metri
 and its step-300 checkpoint present. E-LoRA is the sole remaining job at step 276.
 Its two active GPUs average 83-88% utilization and 326-368 W over five minutes;
 the other devices have released or are releasing their allocations.
+
+At 13:12 HKT, current E-LoRA was confirmed complete at step-300 accuracy 0.6392.
+Its final base loss 0.03734, raw auxiliary 2.3394, total loss 0.06073, and gradient
+norm 0.0475 are finite, and all step-100/200/300 LoRA checkpoints are present.
+This completes all ten current and six triggered-legacy DAPO/MATH runs.
+
+The final completion audit confirms `COMPLETED 0:0` for all 16 retained DAPO jobs
+and all 14 retained GSM8K jobs. Every DAPO Trackio run contains exactly the four
+fixed evaluations at steps 0/100/200/300 and finite step-300 base, auxiliary,
+total-loss, and gradient values. All eight DAPO LoRA runs retain checkpoints at
+steps 100/200/300; all seven GSM8K LoRA runs retain checkpoints at every eval step
+50/100/150/200/250/300. The a800 queue is empty because the declared GSM8K and
+DAPO/MATH matrices are complete, not because an experiment is missing.
