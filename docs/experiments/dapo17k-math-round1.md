@@ -240,10 +240,10 @@ name; each job has its own pre-launch commit and immutable snapshot.
 
 | Run | Config | Commit | Slurm job | State |
 |---|---|---|---|---|
-| `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `b0dc53f` | 4228 | stable at step 57; step-0 acc 0.6478; replaces failed 4220 |
-| `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `0e93d89` | 4229 | stable at step 54; step-0 acc 0.6526; replaces unstarted 4225 |
-| `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `1e2551a` | 4230 | stable at step 38; step-0 acc 0.6526; replaces unstarted 4226 |
-| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `58ecd62` | 4231 | stable at step 20; replaces unstarted 4227 |
+| `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `b0dc53f` | 4228 | stable at step 97; step-0 acc 0.6478; replaces failed 4220 |
+| `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `0e93d89` | 4229 | stable at step 94; step-0 acc 0.6526; replaces unstarted 4225 |
+| `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `1e2551a` | 4230 | stable at step 74; step-0 acc 0.6526; replaces unstarted 4226 |
+| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `58ecd62` | 4231 | stable at step 55; replaces unstarted 4227 |
 
 At 04:12 HKT, jobs 4218/4219/4221-4224 occupied all 12 A800s; jobs 4228-4231
 were ready in the queue. The three cancelled jobs had no start time and consumed
@@ -253,8 +253,8 @@ no GPU. All replacements have matching pre-launch commits, comments, and snapsho
 
 | Run | Profile | Config | Commit | Slurm job | State |
 |---|---|---|---|---|---|
-| `logitlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1_logitlens_full_legacy.jsonc` | `7d44085` | 4240 | running; started 08:54 HKT |
-| `logitlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1_logitlens_lora_legacy.jsonc` | `ce36408` | 4241 | running; started 08:55 HKT |
+| `logitlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1_logitlens_full_legacy.jsonc` | `7d44085` | 4240 | stable at step 166; step-100 acc 0.6356 |
+| `logitlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1_logitlens_lora_legacy.jsonc` | `ce36408` | 4241 | stable at step 155; step-100 acc 0.6504 |
 | `jlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1_jlens_full_legacy.jsonc` | `bc45773` | 4242 | queued |
 | `jlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1_jlens_lora_legacy.jsonc` | `25b3920` | 4243 | queued |
 | `symjlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1_symjlens_full_legacy.jsonc` | `a522055` | 4244 | queued |
@@ -357,3 +357,14 @@ The fixed-step B/C gaps then triggered the legacy append described above. At
 08:55 HKT, B-full 4240 and B-LoRA 4241 started on node 2 while C/E jobs 4242-4245
 remained queued. The four current jobs plus two legacy jobs occupy all 12 available
 A800s, and every future two-GPU release already has a recorded experiment waiting.
+
+At 09:18 HKT, legacy B-full/B-LoRA had completed full-MATH step-0 at
+0.6526/0.6508 and step-100 at 0.6356/0.6504, then advanced to steps 166/155.
+Their step-1 weighted auxiliary/base ratios are 0.160x/0.167x, matching the
+historical scale rather than the current profile's much larger contribution. All
+losses and gradients remain finite, and the LoRA step-100 checkpoint is retained.
+Current B-full/D-LoRA/E-full/E-LoRA reached steps 97/94/74/55 with weighted
+auxiliary/base ratios 0.40x/0.64x/0.54x/0.74x and no alert or new runtime error.
+Across the 12 allocated GPUs, five-minute utilization is 73-100% and power is
+264-372 W; the four unallocated node-2 cards remain near 58-65 W. Legacy C/E jobs
+4242-4245 remain queued behind the two running B jobs.
