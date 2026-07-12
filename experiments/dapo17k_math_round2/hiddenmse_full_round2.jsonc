@@ -77,7 +77,7 @@
   "global_batch_size": 96,
   "rollouts_per_prompt": 1,
   "train_steps": 300,
-  "eval_steps": 100,
+  "eval_steps": 50,
   "eval_at_start": true,
   "checkpoint_interval": 100,
   "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/dapo17k-math/hiddenmse-full-round2",
