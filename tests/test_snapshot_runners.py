@@ -34,9 +34,11 @@ def test_get_version_records_pinned_experiment_commit(monkeypatch) -> None:
     assert ".wip" not in version
 
 
-def test_runner_uses_job_local_compiler_caches() -> None:
+def test_runner_uses_persistent_gds_cache_with_tmp_fallback() -> None:
     script = _RUNNER.read_text(encoding="utf-8")
 
-    assert "LOCAL_CACHE=/tmp/opdlens-cache-$SLURM_JOB_ID" in script
-    assert 'VLLM_CACHE_ROOT="$LOCAL_CACHE/vllm"' in script
-    assert 'TORCHINDUCTOR_CACHE_DIR="$LOCAL_CACHE/torchinductor"' in script
+    # Persistent per-GPU-pair NVMe cache, ephemeral /tmp fallback, never NFS.
+    assert "/gds/gpu" in script
+    assert 'CACHE_ROOT="/tmp/opdlens-cache-$SLURM_JOB_ID"' in script
+    assert 'VLLM_CACHE_ROOT="$CACHE_ROOT/vllm"' in script
+    assert 'TORCHINDUCTOR_CACHE_DIR="$CACHE_ROOT/torchinductor"' in script
