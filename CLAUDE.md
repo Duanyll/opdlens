@@ -8,24 +8,15 @@ work from diverging into incomparable results — follow them exactly.
 
 ## The scientific discipline (read first)
 
-These are laws, not style preferences. Breaking one is a *scientific* bug — it
-confounds cross-arm comparison — not a matter of taste.
+The framework has settled. Two rules keep results comparable:
 
-1. **An experiment is a config, not code.** A new experiment is a new example
-   config that differs from the others only in its arm block. Never edit the
-   train/eval loop, rollout, teacher forward, optimizer, or checkpointing to
-   change an experiment.
-2. **One seam, kept narrow.** The arms differ only in the auxiliary loss;
-   everything else is identical for every arm by construction. Do not widen the
-   seam, and reuse the shared loss machinery rather than reimplementing it per arm.
-3. **Fair comparison is structural.** With the aux weight set to zero, every arm
-   must gate its aux completely off (no hidden capture, no RNG use) and reduce to
-   the shared base loss; the example configs must differ only in the arm block.
-   The spine tests pin this — keep them green.
-4. **One grader, one prompt per dataset.** The same prompt-builder and grader serve
-   training rollout, in-loop eval, and reported eval. Never select a checkpoint
-   under a different metric than you report.
-5. **Eval at fixed steps.** No best-step selection.
+1. **Change behavior by adding a knob, never by mutating the old path.** To adjust
+   how an experiment behaves, add an option in the right place or a new pydantic
+   type, and default it to the existing behavior — so every old config keeps
+   producing its old result.
+2. **Never touch eval without explicit consent.** Do not change the grader,
+   prompt-builder, eval metric, or eval schedule unless the user has explicitly
+   agreed.
 
 ## The one design law
 
