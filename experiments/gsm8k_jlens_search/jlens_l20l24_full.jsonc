@@ -7,19 +7,13 @@
       "HF_HUB_OFFLINE": "1"
     }
   },
-  "experiment_name": "logitlens-l12-lora",
+  "experiment_name": "jlens-l20l24-full",
   "trackio_project": "opdlens-gsm8k",
   "seed": 42,
   "student": {
     "model_id": "Qwen/Qwen3.5-2B",
     "dtype": "bf16",
-    "attn_impl": "sdpa",
-    "lora": {
-      "r": 8,
-      "alpha": 32,
-      "dropout": 0.05,
-      "target_modules": "all-linear"
-    }
+    "attn_impl": "sdpa"
   },
   "teacher": {
     "model_id": "Qwen/Qwen3.5-9B",
@@ -27,12 +21,14 @@
     "attn_impl": "sdpa"
   },
   "arm": {
-    "type": "logit_lens",
+    "type": "jspace",
     "aux_weight": 0.01,
     "teacher_layers": [
-      12
+      20,
+      24
     ],
-    "temperature": 1.0
+    "temperature": 1.0,
+    "jacobian_path": "/gdata/users/duanyll/jlens/qwen3p5_9b_v2/lens.pt"
   },
   "base_beta": 1.0,
   "base_temperature": 1.0,
@@ -69,10 +65,10 @@
   "eval_steps": 50,
   "eval_at_start": true,
   "checkpoint_interval": 100,
-  "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/gsm8k-layersearch/logitlens-l12-lora",
+  "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/gsm8k-jlenssearch/jlens-l20l24-full",
   "optimizer_config": {
     "class_name": "AdamW",
-    "lr": 5e-05,
+    "lr": 2e-05,
     "betas": [
       0.9,
       0.95
