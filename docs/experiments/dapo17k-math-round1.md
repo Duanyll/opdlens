@@ -1,7 +1,7 @@
 # DAPO17K to MATH round 1
 
-Status: GSM8K barrier 4175 completed successfully. Six current-profile DAPO/MATH
-runs are complete and four are running. The completed B/C results met the
+Status: GSM8K barrier 4175 completed successfully. Eight current-profile DAPO/MATH
+runs are complete and two are running. The completed B/C results met the
 predeclared poor-BCE fallback criterion, so legacy BCE jobs 4240-4245 were appended:
 all six are now complete. Current jobs 4228-4231 occupy eight A800s on node 1;
 every other matrix entry is complete and there is no unsubmitted experiment left
@@ -240,10 +240,10 @@ name; each job has its own pre-launch commit and immutable snapshot.
 
 | Run | Config | Commit | Slurm job | State |
 |---|---|---|---|---|
-| `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `b0dc53f` | 4228 | stable at step 262; step-200 acc 0.6536; replaces failed 4220 |
-| `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `0e93d89` | 4229 | stable at step 260; step-200 acc 0.6314; replaces unstarted 4225 |
-| `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `1e2551a` | 4230 | stable at step 226; step-200 acc 0.6614; replaces unstarted 4226 |
-| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `58ecd62` | 4231 | stable at step 200; step-200 acc 0.6460; replaces unstarted 4227 |
+| `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `b0dc53f` | 4228 | completed; step-300 acc 0.6610; replaces failed 4220 |
+| `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `0e93d89` | 4229 | completed; step-300 acc 0.6304; replaces unstarted 4225 |
+| `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `1e2551a` | 4230 | stable at step 269; step-200 acc 0.6614; replaces unstarted 4226 |
+| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `58ecd62` | 4231 | stable at step 241; step-200 acc 0.6460; replaces unstarted 4227 |
 
 At 04:12 HKT, jobs 4218/4219/4221-4224 occupied all 12 A800s; jobs 4228-4231
 were ready in the queue. The three cancelled jobs had no start time and consumed
@@ -423,3 +423,11 @@ Current E-full/E-LoRA completed step-200 eval at 0.6614/0.6460, recovering
 steps 262/260/226/200 with every latest metric finite and no alert or new runtime
 error. The eight allocated node-1 GPUs average 86-100% utilization and 334-403 W;
 node 2 is idle after the legacy matrix completed.
+
+At 12:08 HKT, current B-full and D-LoRA completed cleanly at 0.6610 and 0.6304.
+B-full improves 1.32 points over its separately scheduled initialization. D-LoRA
+finishes 2.22 points below initialization but recovers from its 0.6224 step-100
+low; its final losses and gradients are finite and all three LoRA checkpoints are
+retained. E-full/E-LoRA remain as the final two jobs at steps 269/241. Their four
+active GPUs average 85-99% utilization and 326-374 W over five minutes; the other
+four node-1 devices had just exited B/D final evaluation.
