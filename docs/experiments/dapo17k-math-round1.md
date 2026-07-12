@@ -240,10 +240,10 @@ name; each job has its own pre-launch commit and immutable snapshot.
 
 | Run | Config | Commit | Slurm job | State |
 |---|---|---|---|---|
-| `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `b0dc53f` | 4228 | stable at step 170; step-100 acc 0.6568; replaces failed 4220 |
-| `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `0e93d89` | 4229 | stable at step 168; step-100 acc 0.6224; replaces unstarted 4225 |
-| `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `1e2551a` | 4230 | stable at step 141; step-100 acc 0.6464; replaces unstarted 4226 |
-| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `58ecd62` | 4231 | stable at step 119; replaces unstarted 4227 |
+| `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `b0dc53f` | 4228 | stable at step 203; step-200 acc 0.6536; replaces failed 4220 |
+| `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `0e93d89` | 4229 | stable at step 201; step-200 acc 0.6314; replaces unstarted 4225 |
+| `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `1e2551a` | 4230 | stable at step 177; step-100 acc 0.6464; replaces unstarted 4226 |
+| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `58ecd62` | 4231 | stable at step 154; step-100 acc 0.6308; replaces unstarted 4227 |
 
 At 04:12 HKT, jobs 4218/4219/4221-4224 occupied all 12 A800s; jobs 4228-4231
 were ready in the queue. The three cancelled jobs had no start time and consumed
@@ -257,8 +257,8 @@ no GPU. All replacements have matching pre-launch commits, comments, and snapsho
 | `logitlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1_logitlens_lora_legacy.jsonc` | `ce36408` | 4241 | completed; step-300 acc 0.6620 |
 | `jlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1_jlens_full_legacy.jsonc` | `bc45773` | 4242 | completed; step-300 acc 0.6462 |
 | `jlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1_jlens_lora_legacy.jsonc` | `25b3920` | 4243 | completed; step-300 acc 0.6390 |
-| `symjlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1_symjlens_full_legacy.jsonc` | `a522055` | 4244 | started 10:16 HKT |
-| `symjlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1_symjlens_lora_legacy.jsonc` | `29298cf` | 4245 | started 10:18 HKT |
+| `symjlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1_symjlens_full_legacy.jsonc` | `a522055` | 4244 | stable at step 207; step-200 acc 0.6370 |
+| `symjlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1_symjlens_lora_legacy.jsonc` | `29298cf` | 4245 | stable at step 200; step-200 acc 0.6290 |
 
 The generator/config implementation is commit `7cf7b0e`. Every row then receives
 its own empty pre-launch commit so that its immutable snapshot and Slurm comment
@@ -400,3 +400,15 @@ new runtime error is present. Node 1 remains saturated at 88-100% utilization an
 305-376 W over five minutes. The node-2 window spans legacy C completion and E
 startup, averaging 40-77% and 205-334 W on the four allocated devices; the other
 four cards remain at idle power.
+
+At 10:48 HKT, current B-full/D-LoRA completed step-200 eval at 0.6536/0.6314.
+D-LoRA recovered 0.90 points from its step-100 low and remains 2.12 points below
+initialization, well inside the collapse gate. They continued to steps 203/201;
+E-full/E-LoRA reached steps 177/154, with E-LoRA step-100 at 0.6308. Every latest
+loss and gradient is finite and there is no alert or new runtime error.
+
+Legacy E-full/E-LoRA advanced to steps 207/200. Their fixed curves are
+0.6496/0.6408/0.6370 and 0.6478/0.6388/0.6290 at steps 0/100/200 respectively,
+declines of 1.26/1.88 points rather than collapse. The 12 allocated GPUs average
+51-100% utilization and 242-376 W over five minutes; every allocated device remains
+well above idle power.
