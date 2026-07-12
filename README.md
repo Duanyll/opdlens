@@ -47,6 +47,8 @@ structural, not a convention.
   never mixed in one comparison.
 - `docs/experiments/<round>.md` — the write-up and per-run log (job ids, commits,
   results) for the matching `experiments/<round>/`.
+- `docs/experiments/results.md` — cross-round results dashboard (repro / round1 /
+  round2 / live search), refreshed from the `logs/` eval lines.
 - `scripts/run.sbatch <config.jsonc> [<commit>]` — the **single** launcher. It
   archives the repo at `<commit>` (default `HEAD`) into an immutable snapshot and
   trains from it, exporting `OPDLENS_EXPERIMENT_COMMIT` so the code version lands
