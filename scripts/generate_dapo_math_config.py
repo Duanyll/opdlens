@@ -26,7 +26,7 @@ MATH_SUBJECTS = [
     "prealgebra",
     "precalculus",
 ]
-TEACHER_LAYERS = [8, 16, 24]
+TEACHER_LAYERS = [16, 24]
 MEMORY_PROFILE = "chunk256vllm020"
 
 
