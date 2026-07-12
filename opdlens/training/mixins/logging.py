@@ -30,7 +30,7 @@ from rich.progress import (
     TimeRemainingColumn,
 )
 
-from ...utils.logging import console, get_logger
+from ...utils.logging import console, get_logger, get_version
 from ..base import BaseTrainer
 
 logger = get_logger(__name__)
@@ -78,11 +78,15 @@ class LoggingMixin(BaseTrainer):
         # "gkd-lora" rather than a timestamp-hash; the project groups a dataset's
         # arms together (set trackio_project per dataset, e.g. opdlens-gsm8k). The
         # full trainer config (arm, losses, optimizer, batch, ...) is logged so every
-        # run carries its hyperparameters.
+        # run carries its hyperparameters. ``opdlens_version`` stamps the run with the
+        # exact code + git commit that produced it (the launch script's pinned
+        # OPDLENS_EXPERIMENT_COMMIT), so a run is always traceable back to its source.
+        config = self.model_dump(mode="json")
+        config["opdlens_version"] = get_version()
         trackio.init(
             project=self.trackio_project or self.experiment_name,
             name=self.experiment_name,
-            config=self.model_dump(mode="json"),
+            config=config,
             resume="allow",
         )
         self._tracker_active = True

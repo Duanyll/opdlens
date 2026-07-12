@@ -326,7 +326,7 @@ _version_cache: str | None = None
 
 
 def get_version() -> str:
-    """Version string, augmented with the current git commit + dirty flag."""
+    """Version string, augmented with the git commit (pinned or HEAD) + dirty flag."""
     global _version_cache
     if _version_cache is not None:
         return _version_cache
@@ -334,23 +334,30 @@ def get_version() -> str:
     result = "unknown"
     with contextlib.suppress(PackageNotFoundError):
         result = version("opdlens")
-    with contextlib.suppress(Exception):
-        git_commit = (
-            subprocess.check_output(
-                ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL
+    # The launch scripts snapshot the repo at a pinned commit and export it as
+    # OPDLENS_EXPERIMENT_COMMIT; prefer that over the working-tree HEAD, which
+    # under the snapshot workflow may have moved on to an unrelated commit.
+    pinned = os.getenv("OPDLENS_EXPERIMENT_COMMIT")
+    if pinned:
+        result += f"+git.{pinned}"
+    else:
+        with contextlib.suppress(Exception):
+            git_commit = (
+                subprocess.check_output(
+                    ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL
+                )
+                .decode("ascii")
+                .strip()
             )
-            .decode("ascii")
-            .strip()
-        )
-        result += f"+git.{git_commit}"
-        has_changes = (
-            subprocess.check_output(
-                ["git", "status", "--porcelain"], stderr=subprocess.DEVNULL
-            ).strip()
-            != b""
-        )
-        if has_changes:
-            result += ".wip"
+            result += f"+git.{git_commit}"
+            has_changes = (
+                subprocess.check_output(
+                    ["git", "status", "--porcelain"], stderr=subprocess.DEVNULL
+                ).strip()
+                != b""
+            )
+            if has_changes:
+                result += ".wip"
     _version_cache = result
     return result
 
