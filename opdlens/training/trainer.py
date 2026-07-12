@@ -1,4 +1,4 @@
-"""OpdTrainer — the one trainer. Four arms, one spine.
+"""OpdTrainer — the one trainer. Five arms, one spine.
 
 Composed from the cohesive mixins; the ONLY per-arm variation is ``self.arm``. The
 ``train_step`` below is byte-identical across arms: rollout → teacher & student
@@ -40,6 +40,9 @@ class OpdTrainer(RolloutMixin, EvalMixin, TeacherMixin, OptimMixin, Checkpointin
     base_temperature: float = 1.0
     base_beta: float = 0.0
     """Base-loss divergence: 0=forward KL (default), 0.5=JSD (ms-swift GKD), 1=reverse."""
+    base_loss_chunk_size: int = 0
+    """Checkpoint the base-loss softmax graph in token chunks. Zero preserves the
+    original monolithic calculation; positive values change only memory/recomputation."""
     eval_steps: int = 50
     eval_at_start: bool = True
 
@@ -77,6 +80,7 @@ class OpdTrainer(RolloutMixin, EvalMixin, TeacherMixin, OptimMixin, Checkpointin
                 batch.loss_mask,
                 temperature=self.base_temperature,
                 beta=self.base_beta,
+                chunk_size=self.base_loss_chunk_size,
             )
             if active_aux:
                 aux, _ = self.arm.aux_loss(

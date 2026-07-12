@@ -1,6 +1,6 @@
 {
-  // Arm A — plain OPD (final-logit KL). Baseline.
-  // The five arm_*.jsonc configs are IDENTICAL except the "arm" block.
+  // Arm E — symmetric Jacobian-lens aux. IDENTICAL to arm_a.jsonc except the "arm" block.
+  // Fit separate lenses at the mapped student layers and configured teacher layers.
   "$schema": "../schema/opd.schema.json",
   "launch": { "type": "opd", "devices": "all" },
   "experiment_name": "opd-gsm8k",
@@ -9,7 +9,14 @@
   "student": { "model_id": "Qwen/Qwen3-1.7B", "dtype": "bf16" },
   "teacher": { "model_id": "Qwen/Qwen3-8B", "dtype": "bf16" },
 
-  "arm": { "type": "logits" },
+  "arm": {
+    "type": "symmetric_jlens",
+    "aux_weight": 0.1,
+    "teacher_layers": [8, 12, 16],
+    "temperature": 1.0,
+    "student_jacobian_path": "student-lens.pt",
+    "teacher_jacobian_path": "teacher-lens.pt"
+  },
 
   "train_benchmark": { "type": "gsm8k", "split": "train" },
   "eval_benchmarks": [

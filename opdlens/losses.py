@@ -2,8 +2,8 @@
 
 ``opd_base_loss`` is arm A and the single base loss every arm shares (the
 invariant pinned by ``tests/test_spine.py``). ``lens_kl`` is the shared
-vocab-space aux body for arms B/C — they differ only in the teacher readout they
-pass in. ``hidden_mse`` is arm D's aux. All operate on one sequence and mask on
+vocab-space aux body for arms B/C/E — they differ only in the readouts they pass
+in. ``hidden_mse`` is arm D's aux. All operate on one sequence and mask on
 the ``[T]`` output-position ``loss_mask`` (see ``types.RolloutBatch``) with no
 next-token shift.
 """
@@ -12,10 +12,11 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable
-from typing import Literal
+from typing import Literal, cast
 
 import torch
 import torch.nn.functional as F
+from torch.utils.checkpoint import checkpoint
 
 KLDir = Literal["forward", "reverse"]
 
@@ -100,6 +101,7 @@ def opd_base_loss(
     *,
     temperature: float = 1.0,
     beta: float = 0.0,
+    chunk_size: int = 0,
 ) -> torch.Tensor:
     """Plain OPD (arm A): masked-mean per-token divergence on final logits.
 
@@ -113,11 +115,37 @@ def opd_base_loss(
     by ``rollout_max_tokens`` instead, which is what keeps the ``[T, V]`` (V≈151k) fp32
     divergence within memory.
     """
-    per_pos = _generalized_jsd(teacher_logits, student_logits, temperature, beta)
+    if chunk_size < 0:
+        raise ValueError(f"chunk_size must be non-negative, got {chunk_size}.")
+    if chunk_size == 0 or student_logits.shape[0] <= chunk_size:
+        per_pos = _generalized_jsd(teacher_logits, student_logits, temperature, beta)
+    else:
+        # Checkpointing each token chunk avoids retaining the full [T, V] fp32
+        # softmax graph. Backward recomputes one chunk at a time with identical math.
+        def chunk_jsd(t: torch.Tensor, s: torch.Tensor) -> torch.Tensor:
+            return _generalized_jsd(t, s, temperature, beta)
+
+        per_pos = torch.cat(
+            [
+                cast(
+                    torch.Tensor,
+                    checkpoint(
+                        chunk_jsd,
+                        teacher_logits[start : start + chunk_size],
+                        student_logits[start : start + chunk_size],
+                        use_reentrant=False,
+                    ),
+                )
+                for start in range(0, student_logits.shape[0], chunk_size)
+            ]
+        )
     return _masked_mean(per_pos, loss_mask)
 
 
-def _supervised_index(loss_mask: torch.Tensor, aux_max_tokens: int) -> torch.Tensor:
+def sample_aux_token_index(
+    loss_mask: torch.Tensor, aux_max_tokens: int
+) -> torch.Tensor:
+    """Select one completion-token subset to share across supervised layers."""
     idx = loss_mask.nonzero(as_tuple=False).squeeze(-1)
     if aux_max_tokens and idx.numel() > aux_max_tokens:
         sel = torch.randperm(idx.numel(), device=idx.device)[:aux_max_tokens]
@@ -128,26 +156,30 @@ def _supervised_index(loss_mask: torch.Tensor, aux_max_tokens: int) -> torch.Ten
 def lens_kl(
     student_hidden: torch.Tensor,
     teacher_hidden: torch.Tensor,
-    unembed_s: Callable[[torch.Tensor], torch.Tensor],
+    student_readout: Callable[[torch.Tensor], torch.Tensor],
     teacher_readout: Callable[[torch.Tensor], torch.Tensor],
     loss_mask: torch.Tensor,
     *,
     temperature: float = 1.0,
     aux_max_tokens: int = 512,
     kl: KLDir = "forward",
+    token_index: torch.Tensor | None = None,
 ) -> torch.Tensor:
-    """Shared vocab-space aux for arms B/C.
+    """Shared vocab-space aux for arms B/C/E.
 
-    Student side is always the logit-lens ``unembed_s(h_S)``. The ``teacher_readout``
-    operator is the arm's single point of difference — logit-lens (B) is
-    ``unembed_t``, Jacobian-lens (C) is ``h -> unembed_t(J·h)``. Supervised
-    completion positions are subsampled to ``aux_max_tokens`` *before* either
-    readout, so the unembed runs on ``[n, d]``, not ``[T, d]``.
+    B uses plain logit-lens readouts on both sides, C transports only the teacher
+    hidden state, and E transports both sides through their offline-fit Jacobians.
+    Supervised completion positions are subsampled to ``aux_max_tokens`` *before*
+    either readout, so the unembed runs on ``[n, d]``, not ``[T, d]``.
     """
-    idx = _supervised_index(loss_mask, aux_max_tokens)
+    idx = (
+        sample_aux_token_index(loss_mask, aux_max_tokens)
+        if token_index is None
+        else token_index
+    )
     if idx.numel() == 0:
         return student_hidden.new_zeros(())
-    student_logits = unembed_s(student_hidden[idx])  # [n, V]
+    student_logits = student_readout(student_hidden[idx])  # [n, V]
     teacher_logits = teacher_readout(teacher_hidden[idx])  # [n, V]
     return _directed_kl(teacher_logits, student_logits, temperature, kl).mean()
 
@@ -156,10 +188,28 @@ def hidden_mse(
     student_hidden: torch.Tensor,
     teacher_hidden: torch.Tensor,
     loss_mask: torch.Tensor,
+    *,
+    aux_max_tokens: int = 0,
+    token_index: torch.Tensor | None = None,
+    compute_fp32: bool = False,
 ) -> torch.Tensor:
     """Arm D: raw-hidden MSE (teacher side already mapped through the bridge).
 
-    Both ``[T, d_s]``. Per-position mean over ``d``, masked-mean over positions.
+    Both ``[T, d_s]``. Mean over ``d`` and over the selected completion tokens.
+    ``compute_fp32=False`` preserves the input-dtype behavior of existing configs.
     """
-    per_pos = (student_hidden - teacher_hidden).pow(2).mean(dim=-1)
-    return _masked_mean(per_pos, loss_mask)
+    idx = (
+        sample_aux_token_index(loss_mask, aux_max_tokens)
+        if token_index is None
+        else token_index
+    )
+    if idx.numel() == 0:
+        empty_source = student_hidden.float() if compute_fp32 else student_hidden
+        return empty_source.sum() * 0.0
+    student_selected = student_hidden[idx]
+    teacher_selected = teacher_hidden[idx]
+    if compute_fp32:
+        student_selected = student_selected.float()
+        teacher_selected = teacher_selected.float()
+    residual = student_selected - teacher_selected
+    return residual.pow(2).mean(dim=-1).mean()

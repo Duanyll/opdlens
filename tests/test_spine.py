@@ -1,6 +1,6 @@
-"""The fair-comparison guardrail: the four arms share one spine.
+"""The fair-comparison guardrail: the five arms share one spine.
 
-Machine-checks that (1) the four experiment configs differ ONLY in the ``arm``
+Machine-checks that (1) the five experiment configs differ ONLY in the ``arm``
 block, and (2) with ``aux_weight == 0`` every arm gates off its aux entirely, so
 each reduces to the single shared ``opd_base_loss`` — fair comparison is
 structural, not a convention.
@@ -14,6 +14,7 @@ import torch
 
 from opdlens.arms import parse_arm
 from opdlens.losses import opd_base_loss
+from opdlens.training import OpdTrainer
 from opdlens.utils.config import load_config_file
 
 _EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
@@ -22,12 +23,182 @@ _EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
 def test_configs_differ_only_in_arm():
     configs = {
         name: load_config_file(str(_EXAMPLES / f"arm_{name}.jsonc"))
-        for name in ("a", "b", "c", "d")
+        for name in ("a", "b", "c", "d", "e")
     }
     baseline = {k: v for k, v in configs["a"].items() if k != "arm"}
-    for name in ("b", "c", "d"):
+    for name in ("b", "c", "d", "e"):
         other = {k: v for k, v in configs[name].items() if k != "arm"}
         assert other == baseline, f"arm_{name}.jsonc differs outside the arm block"
+
+
+def test_legacy_bce_configs_share_one_spine_and_validate():
+    """The triggered fallback matrix may vary only by arm within each tune mode."""
+    for finetune in ("full", "lora"):
+        configs = {
+            arm: load_config_file(
+                str(_EXAMPLES / "gsm8k_round1" / f"{arm}_{finetune}_legacy.jsonc")
+            )
+            for arm in ("logitlens", "jlens", "symjlens")
+        }
+        for config in configs.values():
+            OpdTrainer(**config)
+
+        def spine(config: dict) -> dict:
+            return {
+                key: value
+                for key, value in config.items()
+                if key not in {"arm", "checkpoint_root", "experiment_name"}
+            }
+
+        baseline = spine(configs["logitlens"])
+        for arm in ("jlens", "symjlens"):
+            assert spine(configs[arm]) == baseline
+
+
+def test_legacy_bce_profile_is_pinned():
+    for finetune, expected_lr in (("full", 2e-6), ("lora", 5e-5)):
+        config = load_config_file(
+            str(_EXAMPLES / "gsm8k_round1" / f"logitlens_{finetune}_legacy.jsonc")
+        )
+        assert config["base_beta"] == 0.0
+        assert config["base_temperature"] == 1.0
+        assert config["rollout_temperature"] == 1.0
+        assert config["rollout_top_p"] == 1.0
+        assert config["rollout_max_tokens"] == 512
+        assert config["global_batch_size"] == 8
+        assert config["optimizer_config"] == {
+            "class_name": "AdamW",
+            "lr": expected_lr,
+            "betas": [0.9, 0.999],
+            "weight_decay": 0.0,
+        }
+        assert config["scheduler_config"] == {
+            "class_name": "ConstantLR",
+            "factor": 1.0,
+        }
+        assert config["arm"]["aux_weight"] == 0.01
+        assert config["arm"]["aux_token_policy"] == "shared"
+        assert config["launch"]["devices"] == 2
+        if finetune == "lora":
+            assert config["checkpoint_interval"] == config["eval_steps"]
+            assert config["max_checkpoints"] == 0
+
+
+def test_dapo_math_matrix_shares_one_spine_and_validates():
+    for finetune in ("full", "lora"):
+        configs = {
+            arm: load_config_file(
+                str(_EXAMPLES / "dapo17k_math_round1" / f"{arm}_{finetune}.jsonc")
+            )
+            for arm in ("logits", "logitlens", "jlens", "hiddenmse", "symjlens")
+        }
+        for config in configs.values():
+            OpdTrainer(**config)
+
+        def spine(config: dict) -> dict:
+            return {
+                key: value
+                for key, value in config.items()
+                if key not in {"arm", "checkpoint_root", "experiment_name"}
+            }
+
+        baseline = spine(configs["logits"])
+        for arm in ("logitlens", "jlens", "hiddenmse", "symjlens"):
+            assert spine(configs[arm]) == baseline
+
+
+def test_dapo_math_matrix_protocol_is_pinned():
+    for finetune in ("full", "lora"):
+        config = load_config_file(
+            str(_EXAMPLES / "dapo17k_math_round1" / f"logits_{finetune}.jsonc")
+        )
+        train = config["train_benchmark"]
+        evaluation = config["eval_benchmarks"][0]
+        assert config["trackio_project"] == "opdlens-math"
+        assert train["type"] == "dapo_math"
+        assert train["hf_id"] == "open-r1/DAPO-Math-17k-Processed"
+        assert train["hf_revision"] == "31dd309567e3da778038cc87d868b6097a3ccf68"
+        assert evaluation["type"] == "math"
+        assert evaluation["hf_id"] == "EleutherAI/hendrycks_math"
+        assert evaluation["hf_revision"] == ("21a5633873b6a120296cce3e2df9d5550074f4a3")
+        assert len(evaluation["subjects"]) == 7
+        assert evaluation["eval_temperature"] == 0.0
+        assert evaluation["avg_k"] == 1
+        assert evaluation["eval_max_tokens"] == 2048
+        assert config["eval_max_samples"] is None
+        assert config["rollout_max_tokens"] == 2048
+        assert config["base_loss_chunk_size"] == 256
+        assert config["vllm_gpu_memory_utilization"] == 0.20
+        assert config["launch"]["env"]["PYTORCH_CUDA_ALLOC_CONF"] == (
+            "expandable_segments:True"
+        )
+        assert config["experiment_name"].endswith("-chunk256vllm020")
+        assert config["eval_steps"] == 100
+        assert config["launch"]["devices"] == 2
+        if finetune == "lora":
+            assert config["checkpoint_interval"] == config["eval_steps"]
+            assert config["max_checkpoints"] == 0
+
+
+def test_dapo_math_legacy_bce_configs_share_one_spine_and_validate():
+    for finetune in ("full", "lora"):
+        configs = {
+            arm: load_config_file(
+                str(
+                    _EXAMPLES / "dapo17k_math_round1" / f"{arm}_{finetune}_legacy.jsonc"
+                )
+            )
+            for arm in ("logitlens", "jlens", "symjlens")
+        }
+        for config in configs.values():
+            OpdTrainer(**config)
+
+        def spine(config: dict) -> dict:
+            return {
+                key: value
+                for key, value in config.items()
+                if key not in {"arm", "checkpoint_root", "experiment_name"}
+            }
+
+        baseline = spine(configs["logitlens"])
+        for arm in ("jlens", "symjlens"):
+            assert spine(configs[arm]) == baseline
+
+
+def test_dapo_math_legacy_bce_profile_is_pinned():
+    for finetune, expected_lr in (("full", 2e-6), ("lora", 5e-5)):
+        config = load_config_file(
+            str(
+                _EXAMPLES / "dapo17k_math_round1" / f"logitlens_{finetune}_legacy.jsonc"
+            )
+        )
+        assert config["base_beta"] == 0.0
+        assert config["base_temperature"] == 1.0
+        assert config["rollout_temperature"] == 1.0
+        assert config["rollout_top_p"] == 1.0
+        assert config["rollout_max_tokens"] == 512
+        assert config["global_batch_size"] == 8
+        assert config["optimizer_config"] == {
+            "class_name": "AdamW",
+            "lr": expected_lr,
+            "betas": [0.9, 0.999],
+            "weight_decay": 0.0,
+        }
+        assert config["scheduler_config"] == {
+            "class_name": "ConstantLR",
+            "factor": 1.0,
+        }
+        assert config["arm"]["aux_weight"] == 0.01
+        assert config["arm"]["aux_token_policy"] == "shared"
+        assert config["base_loss_chunk_size"] == 256
+        assert config["vllm_gpu_memory_utilization"] == 0.20
+        assert config["eval_steps"] == 100
+        assert config["eval_benchmarks"][0]["eval_max_tokens"] == 2048
+        assert config["experiment_name"].endswith("-legacy-chunk256vllm020")
+        assert config["launch"]["devices"] == 2
+        if finetune == "lora":
+            assert config["checkpoint_interval"] == config["eval_steps"]
+            assert config["max_checkpoints"] == 0
 
 
 def test_aux_weight_zero_gates_off_aux():
@@ -47,6 +218,13 @@ def test_aux_weight_zero_gates_off_aux():
             "aux_weight": 0.0,
             "teacher_layers": [8],
             "bridge_path": "x",
+        },
+        {
+            "type": "symmetric_jlens",
+            "aux_weight": 0.0,
+            "teacher_layers": [8],
+            "student_jacobian_path": "x",
+            "teacher_jacobian_path": "x",
         },
     ]
     for spec in specs:
@@ -99,3 +277,25 @@ def test_base_beta_selects_divergence():
     assert torch.allclose(
         opd_base_loss(teacher, teacher, mask, beta=0.5), torch.zeros(()), atol=1e-5
     )
+
+
+def test_chunked_base_loss_matches_value_and_gradient():
+    torch.manual_seed(7)
+    teacher = torch.randn(11, 37)
+    student_full = torch.randn(11, 37, requires_grad=True)
+    student_chunked = student_full.detach().clone().requires_grad_(True)
+    mask = torch.zeros(11, dtype=torch.bool)
+    mask[3:] = True
+
+    full = opd_base_loss(student_full, teacher, mask, beta=0.5)
+    chunked = opd_base_loss(student_chunked, teacher, mask, beta=0.5, chunk_size=3)
+    full.backward()
+    chunked.backward()
+
+    assert torch.allclose(chunked, full, atol=1e-7, rtol=1e-6)
+    assert torch.allclose(student_chunked.grad, student_full.grad, atol=1e-7, rtol=1e-5)
+
+
+def test_base_loss_chunking_defaults_to_old_path():
+    trainer = OpdTrainer.model_construct()
+    assert trainer.base_loss_chunk_size == 0
