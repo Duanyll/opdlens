@@ -240,10 +240,10 @@ name; each job has its own pre-launch commit and immutable snapshot.
 
 | Run | Config | Commit | Slurm job | State |
 |---|---|---|---|---|
-| `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `b0dc53f` | 4228 | stable at step 97; step-0 acc 0.6478; replaces failed 4220 |
-| `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `0e93d89` | 4229 | stable at step 94; step-0 acc 0.6526; replaces unstarted 4225 |
-| `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `1e2551a` | 4230 | stable at step 74; step-0 acc 0.6526; replaces unstarted 4226 |
-| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `58ecd62` | 4231 | stable at step 55; replaces unstarted 4227 |
+| `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `b0dc53f` | 4228 | stable at step 131; step-100 acc 0.6568; replaces failed 4220 |
+| `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `0e93d89` | 4229 | stable at step 128; step-100 acc 0.6224; replaces unstarted 4225 |
+| `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `1e2551a` | 4230 | stable at step 105; step-100 acc 0.6464; replaces unstarted 4226 |
+| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `58ecd62` | 4231 | stable at step 90; replaces unstarted 4227 |
 
 At 04:12 HKT, jobs 4218/4219/4221-4224 occupied all 12 A800s; jobs 4228-4231
 were ready in the queue. The three cancelled jobs had no start time and consumed
@@ -253,10 +253,10 @@ no GPU. All replacements have matching pre-launch commits, comments, and snapsho
 
 | Run | Profile | Config | Commit | Slurm job | State |
 |---|---|---|---|---|---|
-| `logitlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1_logitlens_full_legacy.jsonc` | `7d44085` | 4240 | stable at step 166; step-100 acc 0.6356 |
-| `logitlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1_logitlens_lora_legacy.jsonc` | `ce36408` | 4241 | stable at step 155; step-100 acc 0.6504 |
-| `jlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1_jlens_full_legacy.jsonc` | `bc45773` | 4242 | queued |
-| `jlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1_jlens_lora_legacy.jsonc` | `25b3920` | 4243 | queued |
+| `logitlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1_logitlens_full_legacy.jsonc` | `7d44085` | 4240 | completed; step-300 acc 0.6410 |
+| `logitlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1_logitlens_lora_legacy.jsonc` | `ce36408` | 4241 | completed; step-300 acc 0.6620 |
+| `jlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1_jlens_full_legacy.jsonc` | `bc45773` | 4242 | stable at step 57; step-0 acc 0.6526 |
+| `jlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1_jlens_lora_legacy.jsonc` | `25b3920` | 4243 | stable at step 42; step-0 acc 0.6508 |
 | `symjlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1_symjlens_full_legacy.jsonc` | `a522055` | 4244 | queued |
 | `symjlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1_symjlens_lora_legacy.jsonc` | `29298cf` | 4245 | queued |
 
@@ -368,3 +368,20 @@ auxiliary/base ratios 0.40x/0.64x/0.54x/0.74x and no alert or new runtime error.
 Across the 12 allocated GPUs, five-minute utilization is 73-100% and power is
 264-372 W; the four unallocated node-2 cards remain near 58-65 W. Legacy C/E jobs
 4242-4245 remain queued behind the two running B jobs.
+
+At 09:48 HKT, legacy B-full/B-LoRA completed cleanly at step-300 accuracies
+0.6410/0.6620. The full run stays within 1.16 points of initialization; LoRA
+finishes 1.12 points above initialization and 3.38 points above current B-LoRA.
+Their final weighted auxiliary/base ratios are 0.163x/0.126x, all losses and
+gradients are finite, and LoRA retains step-100/200/300 checkpoints. Legacy C-full
+4242 and C-LoRA 4243 immediately replaced them and reached steps 57/42 after common
+full-MATH initialization at 0.6526/0.6508. Their latest weighted auxiliary/base
+ratios are 0.32x/0.22x, again matching the historical scale.
+
+Current B-full/D-LoRA/E-full completed step-100 eval at 0.6568/0.6224/0.6464 and
+continued to steps 131/128/105; E-LoRA remained stable at step 90. D-LoRA is the
+lowest current result, 3.02 points below its own initialization but still inside
+the five-point collapse gate, with finite training metrics. The eight node-1 GPUs
+average 84-100% utilization and 280-412 W. The four node-2 GPUs running the small
+historical batch average 39-75% and 152-313 W while completing an entire run in
+about 40 minutes; none is idle near 100 W. Legacy E jobs 4244/4245 remain queued.
