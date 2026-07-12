@@ -1,11 +1,11 @@
 # DAPO17K to MATH round 1
 
 Status: GSM8K barrier 4175 completed successfully. Six current-profile DAPO/MATH
-runs are complete and four are running. The completed B/C results meet the
-predeclared poor-BCE fallback criterion, so legacy BCE jobs 4240-4245 are appended:
-two occupy the four A800s released on node 2 and four remain queued. Together with
-current jobs 4228-4231 on node 1, all 12 available A800s are occupied and the queue
-has a four-job backlog.
+runs are complete and four are running. The completed B/C results met the
+predeclared poor-BCE fallback criterion, so legacy BCE jobs 4240-4245 were appended:
+B/C are complete and both E jobs are running. Together with current jobs 4228-4231,
+all 12 available A800s are occupied. Every matrix entry is complete or running;
+there is no unsubmitted experiment left in this stage.
 
 ## Dataset identity
 
@@ -240,10 +240,10 @@ name; each job has its own pre-launch commit and immutable snapshot.
 
 | Run | Config | Commit | Slurm job | State |
 |---|---|---|---|---|
-| `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `b0dc53f` | 4228 | stable at step 131; step-100 acc 0.6568; replaces failed 4220 |
-| `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `0e93d89` | 4229 | stable at step 128; step-100 acc 0.6224; replaces unstarted 4225 |
-| `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `1e2551a` | 4230 | stable at step 105; step-100 acc 0.6464; replaces unstarted 4226 |
-| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `58ecd62` | 4231 | stable at step 90; replaces unstarted 4227 |
+| `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `b0dc53f` | 4228 | stable at step 170; step-100 acc 0.6568; replaces failed 4220 |
+| `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `0e93d89` | 4229 | stable at step 168; step-100 acc 0.6224; replaces unstarted 4225 |
+| `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `1e2551a` | 4230 | stable at step 141; step-100 acc 0.6464; replaces unstarted 4226 |
+| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `58ecd62` | 4231 | stable at step 119; replaces unstarted 4227 |
 
 At 04:12 HKT, jobs 4218/4219/4221-4224 occupied all 12 A800s; jobs 4228-4231
 were ready in the queue. The three cancelled jobs had no start time and consumed
@@ -255,10 +255,10 @@ no GPU. All replacements have matching pre-launch commits, comments, and snapsho
 |---|---|---|---|---|---|
 | `logitlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1_logitlens_full_legacy.jsonc` | `7d44085` | 4240 | completed; step-300 acc 0.6410 |
 | `logitlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1_logitlens_lora_legacy.jsonc` | `ce36408` | 4241 | completed; step-300 acc 0.6620 |
-| `jlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1_jlens_full_legacy.jsonc` | `bc45773` | 4242 | stable at step 57; step-0 acc 0.6526 |
-| `jlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1_jlens_lora_legacy.jsonc` | `25b3920` | 4243 | stable at step 42; step-0 acc 0.6508 |
-| `symjlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1_symjlens_full_legacy.jsonc` | `a522055` | 4244 | queued |
-| `symjlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1_symjlens_lora_legacy.jsonc` | `29298cf` | 4245 | queued |
+| `jlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1_jlens_full_legacy.jsonc` | `bc45773` | 4242 | completed; step-300 acc 0.6462 |
+| `jlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1_jlens_lora_legacy.jsonc` | `25b3920` | 4243 | completed; step-300 acc 0.6390 |
+| `symjlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `examples/dapo17k_math_round1_symjlens_full_legacy.jsonc` | `a522055` | 4244 | started 10:16 HKT |
+| `symjlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `examples/dapo17k_math_round1_symjlens_lora_legacy.jsonc` | `29298cf` | 4245 | started 10:18 HKT |
 
 The generator/config implementation is commit `7cf7b0e`. Every row then receives
 its own empty pre-launch commit so that its immutable snapshot and Slurm comment
@@ -385,3 +385,18 @@ the five-point collapse gate, with finite training metrics. The eight node-1 GPU
 average 84-100% utilization and 280-412 W. The four node-2 GPUs running the small
 historical batch average 39-75% and 152-313 W while completing an entire run in
 about 40 minutes; none is idle near 100 W. Legacy E jobs 4244/4245 remain queued.
+
+At 10:18 HKT, legacy C-full/C-LoRA completed cleanly at 0.6462/0.6390. Full is
+identical to current C-full, while legacy LoRA improves 0.86 points over current
+C-LoRA. Both remain within 1.18 points of their own initialization; final losses
+and gradients are finite, and LoRA retains all three eval checkpoints. Legacy
+E-full 4244 and E-LoRA 4245 immediately started at 10:16/10:18, so all submitted
+matrix entries are now complete or running and there is no remaining experiment to
+queue in this stage.
+
+Current B-full/D-LoRA/E-full/E-LoRA advanced to steps 170/168/141/119 with finite
+metrics and weighted auxiliary/base ratios 0.38x/0.62x/0.47x/0.65x. No alert or
+new runtime error is present. Node 1 remains saturated at 88-100% utilization and
+305-376 W over five minutes. The node-2 window spans legacy C completion and E
+startup, averaging 40-77% and 205-334 W on the four allocated devices; the other
+four cards remain at idle power.
