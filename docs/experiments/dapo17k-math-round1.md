@@ -1,7 +1,7 @@
 # DAPO17K to MATH round 1
 
-Status: GSM8K barrier 4175 completed successfully. Eight current-profile DAPO/MATH
-runs are complete and two are running. The completed B/C results met the
+Status: GSM8K barrier 4175 completed successfully. Nine current-profile DAPO/MATH
+runs are complete and one is running. The completed B/C results met the
 predeclared poor-BCE fallback criterion, so legacy BCE jobs 4240-4245 were appended:
 all six are now complete. Current jobs 4228-4231 occupy eight A800s on node 1;
 every other matrix entry is complete and there is no unsubmitted experiment left
@@ -242,8 +242,8 @@ name; each job has its own pre-launch commit and immutable snapshot.
 |---|---|---|---|---|
 | `logitlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_logitlens_full.jsonc` | `b0dc53f` | 4228 | completed; step-300 acc 0.6610; replaces failed 4220 |
 | `hiddenmse-lora-chunk256vllm020` | `examples/dapo17k_math_round1_hiddenmse_lora.jsonc` | `0e93d89` | 4229 | completed; step-300 acc 0.6304; replaces unstarted 4225 |
-| `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `1e2551a` | 4230 | stable at step 269; step-200 acc 0.6614; replaces unstarted 4226 |
-| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `58ecd62` | 4231 | stable at step 241; step-200 acc 0.6460; replaces unstarted 4227 |
+| `symjlens-full-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_full.jsonc` | `1e2551a` | 4230 | completed; step-300 acc 0.6570; replaces unstarted 4226 |
+| `symjlens-lora-chunk256vllm020` | `examples/dapo17k_math_round1_symjlens_lora.jsonc` | `58ecd62` | 4231 | stable at step 276; step-200 acc 0.6460; replaces unstarted 4227 |
 
 At 04:12 HKT, jobs 4218/4219/4221-4224 occupied all 12 A800s; jobs 4228-4231
 were ready in the queue. The three cancelled jobs had no start time and consumed
@@ -431,3 +431,8 @@ low; its final losses and gradients are finite and all three LoRA checkpoints ar
 retained. E-full/E-LoRA remain as the final two jobs at steps 269/241. Their four
 active GPUs average 85-99% utilization and 326-374 W over five minutes; the other
 four node-1 devices had just exited B/D final evaluation.
+
+At 12:42 HKT, current E-full completed cleanly at 0.6570 with finite final metrics
+and its step-300 checkpoint present. E-LoRA is the sole remaining job at step 276.
+Its two active GPUs average 83-88% utilization and 326-368 W over five minutes;
+the other devices have released or are releasing their allocations.
