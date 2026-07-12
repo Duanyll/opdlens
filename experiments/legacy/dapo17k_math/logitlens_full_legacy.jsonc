@@ -1,14 +1,16 @@
 {
-  "$schema": "../../schema/opd.schema.json",
+  "$schema": "../../../schema/opd.schema.json",
   "launch": {
     "type": "opd",
     "devices": 2,
     "env": {
-      "HF_HUB_OFFLINE": "1"
+      "HF_HUB_OFFLINE": "1",
+      "HF_DATASETS_OFFLINE": "1",
+      "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"
     }
   },
-  "experiment_name": "logitlens-full-legacy",
-  "trackio_project": "opdlens-gsm8k",
+  "experiment_name": "logitlens-full-legacy-chunk256vllm020",
+  "trackio_project": "opdlens-math",
   "seed": 42,
   "student": {
     "model_id": "Qwen/Qwen3.5-2B",
@@ -35,17 +37,29 @@
   "base_temperature": 1.0,
   "enable_thinking": false,
   "train_benchmark": {
-    "type": "gsm8k",
+    "type": "dapo_math",
+    "hf_id": "open-r1/DAPO-Math-17k-Processed",
+    "hf_name": "all",
+    "hf_revision": "31dd309567e3da778038cc87d868b6097a3ccf68",
     "split": "train",
-    "system_prompt": null
+    "system_prompt": "Solve the following problem step by step. Put your final answer within \\boxed{}."
   },
   "eval_benchmarks": [
     {
-      "type": "gsm8k",
+      "type": "math",
+      "hf_id": "EleutherAI/hendrycks_math",
+      "hf_revision": "21a5633873b6a120296cce3e2df9d5550074f4a3",
+      "subjects": [
+        "algebra",
+        "counting_and_probability",
+        "geometry",
+        "intermediate_algebra",
+        "number_theory",
+        "prealgebra",
+        "precalculus"
+      ],
       "split": "test",
-      "system_prompt": null,
-      "few_shot_num": 4,
-      "answer_instruction": "Please reason step by step, and put your final answer within \\boxed{}.",
+      "system_prompt": "Solve the following problem step by step. Put your final answer within \\boxed{}.",
       "eval_temperature": 0.0,
       "eval_top_p": 1.0,
       "avg_k": 1,
@@ -57,16 +71,16 @@
   "rollout_temperature": 1.0,
   "rollout_top_p": 1.0,
   "rollout_max_tokens": 512,
-  "vllm_gpu_memory_utilization": 0.25,
+  "vllm_gpu_memory_utilization": 0.2,
   "vllm_max_model_len": 4096,
   "vllm_enforce_eager": false,
   "global_batch_size": 8,
   "rollouts_per_prompt": 1,
   "train_steps": 300,
-  "eval_steps": 50,
+  "eval_steps": 100,
   "eval_at_start": true,
   "checkpoint_interval": 100,
-  "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/logitlens-full-legacy",
+  "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/dapo17k-math/logitlens-full-legacy-chunk256vllm020",
   "optimizer_config": {
     "class_name": "AdamW",
     "lr": 2e-06,
@@ -80,5 +94,6 @@
     "class_name": "ConstantLR",
     "factor": 1.0
   },
-  "clip_grad_norm": 1.0
+  "clip_grad_norm": 1.0,
+  "base_loss_chunk_size": 256
 }

@@ -3,8 +3,8 @@
 Composed from the cohesive mixins; the ONLY per-arm variation is ``self.arm``. The
 ``train_step`` below is byte-identical across arms: rollout → teacher & student
 forward → shared ``opd_base_loss`` (the invariant) → ``arm.aux_loss`` (the seam) →
-step → weight-sync. When ``aux_weight == 0`` (arm A, or any arm under
-``test_spine``) the aux path is skipped entirely — no hidden capture, no RNG use —
+step → weight-sync. When ``aux_weight == 0`` (arm A, or any arm with its aux
+disabled) the aux path is skipped entirely — no hidden capture, no RNG use —
 so every arm reduces to identical base OPD.
 """
 

@@ -26,9 +26,9 @@ union (`opdlens/arms.py`); benchmarks (GSM8K / MATH / MATH-500 / AIME) are a
 behavior-rich union owning prompt construction **and** grading. Colocated
 in-process vLLM samples on-policy; multi-GPU DDP now, FSDP2 next.
 
-`tests/test_spine.py` pins the invariant: with `aux_weight=0` every arm reduces
-to identical base OPD, and experiment configs differ only in the `arm` block —
-fair comparison is structural, not a convention.
+By design, with `aux_weight=0` every arm reduces to identical base OPD, and
+experiment configs differ only in the `arm` block — fair comparison is
+structural, not a convention.
 
 ## Layout
 
@@ -40,6 +40,11 @@ fair comparison is structural, not a convention.
   `experiments/repro_gkd/`). Each `.jsonc` is a committed, self-contained run spec
   and is the source of truth — the scripts that generated them are intentionally
   **not** tracked (recover from git history if a matrix ever needs regenerating).
+  Configs are only comparable **within one recipe family**: the round dirs and
+  `repro_gkd/` share the current GKD recipe (β=0.5, global batch 96, cosine),
+  whereas `experiments/legacy/<bench>/` holds the earlier, far-shorter legacy-BCE
+  recipe (β=0, global batch 8, constant LR) — kept apart precisely so the two are
+  never mixed in one comparison.
 - `docs/experiments/<round>.md` — the write-up and per-run log (job ids, commits,
   results) for the matching `experiments/<round>/`.
 - `scripts/run.sbatch <config.jsonc> [<commit>]` — the **single** launcher. It

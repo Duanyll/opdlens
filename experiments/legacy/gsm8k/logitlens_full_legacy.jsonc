@@ -1,5 +1,5 @@
 {
-  "$schema": "../../schema/opd.schema.json",
+  "$schema": "../../../schema/opd.schema.json",
   "launch": {
     "type": "opd",
     "devices": 2,
@@ -7,19 +7,13 @@
       "HF_HUB_OFFLINE": "1"
     }
   },
-  "experiment_name": "symjlens-lora-legacy",
+  "experiment_name": "logitlens-full-legacy",
   "trackio_project": "opdlens-gsm8k",
   "seed": 42,
   "student": {
     "model_id": "Qwen/Qwen3.5-2B",
     "dtype": "bf16",
-    "attn_impl": "sdpa",
-    "lora": {
-      "r": 8,
-      "alpha": 32,
-      "dropout": 0.05,
-      "target_modules": "all-linear"
-    }
+    "attn_impl": "sdpa"
   },
   "teacher": {
     "model_id": "Qwen/Qwen3.5-9B",
@@ -27,7 +21,7 @@
     "attn_impl": "sdpa"
   },
   "arm": {
-    "type": "symmetric_jlens",
+    "type": "logit_lens",
     "aux_weight": 0.01,
     "aux_token_policy": "shared",
     "teacher_layers": [
@@ -35,9 +29,7 @@
       16,
       24
     ],
-    "temperature": 1.0,
-    "student_jacobian_path": "/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens-cot.pt",
-    "teacher_jacobian_path": "/gdata/users/duanyll/jlens/qwen3p5_9b_v2/lens.pt"
+    "temperature": 1.0
   },
   "base_beta": 0.0,
   "base_temperature": 1.0,
@@ -73,11 +65,11 @@
   "train_steps": 300,
   "eval_steps": 50,
   "eval_at_start": true,
-  "checkpoint_interval": 50,
-  "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/symjlens-lora-legacy",
+  "checkpoint_interval": 100,
+  "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/logitlens-full-legacy",
   "optimizer_config": {
     "class_name": "AdamW",
-    "lr": 5e-05,
+    "lr": 2e-06,
     "betas": [
       0.9,
       0.999
@@ -88,6 +80,5 @@
     "class_name": "ConstantLR",
     "factor": 1.0
   },
-  "clip_grad_norm": 1.0,
-  "max_checkpoints": 0
+  "clip_grad_norm": 1.0
 }

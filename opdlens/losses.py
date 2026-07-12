@@ -1,7 +1,7 @@
 """Shared, arm-agnostic loss primitives.
 
 ``opd_base_loss`` is arm A and the single base loss every arm shares (the
-invariant pinned by ``tests/test_spine.py``). ``lens_kl`` is the shared
+base-OPD invariant). ``lens_kl`` is the shared
 vocab-space aux body for arms B/C/E — they differ only in the readouts they pass
 in. ``hidden_mse`` is arm D's aux. All operate on one sequence and mask on
 the ``[T]`` output-position ``loss_mask`` (see ``types.RolloutBatch``) with no

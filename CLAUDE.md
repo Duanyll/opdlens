@@ -89,7 +89,7 @@ and `sbatch` for long runs. Never `find` / `grep` broadly over `/gdata` or `/hom
 
 1. Read the existing member of the same union (arm, benchmark, …) before adding a
    new one, and follow that pattern.
-2. Keep the spine tests green: `uv run pytest tests`.
+2. Keep the tests green: `uv run pytest tests`.
 3. Fix all type and lint errors, and regenerate the schema, before finishing.
 4. To run a full training / eval pipeline past the Bash timeout, use `sbatch` (or
    `tmux` if Slurm is unavailable).

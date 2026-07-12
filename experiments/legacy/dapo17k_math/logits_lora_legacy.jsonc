@@ -1,5 +1,5 @@
 {
-  "$schema": "../../schema/opd.schema.json",
+  "$schema": "../../../schema/opd.schema.json",
   "launch": {
     "type": "opd",
     "devices": 2,
@@ -9,7 +9,7 @@
       "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"
     }
   },
-  "experiment_name": "logitlens-lora-legacy-chunk256vllm020",
+  "experiment_name": "logits-lora-legacy-chunk256vllm020",
   "trackio_project": "opdlens-math",
   "seed": 42,
   "student": {
@@ -29,15 +29,7 @@
     "attn_impl": "sdpa"
   },
   "arm": {
-    "type": "logit_lens",
-    "aux_weight": 0.01,
-    "aux_token_policy": "shared",
-    "teacher_layers": [
-      8,
-      16,
-      24
-    ],
-    "temperature": 1.0
+    "type": "logits"
   },
   "base_beta": 0.0,
   "base_temperature": 1.0,
@@ -86,7 +78,7 @@
   "eval_steps": 100,
   "eval_at_start": true,
   "checkpoint_interval": 100,
-  "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/dapo17k-math/logitlens-lora-legacy-chunk256vllm020",
+  "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/dapo17k-math/logits-lora-legacy-chunk256vllm020",
   "optimizer_config": {
     "class_name": "AdamW",
     "lr": 5e-05,

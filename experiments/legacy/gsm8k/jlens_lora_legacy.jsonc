@@ -1,5 +1,5 @@
 {
-  "$schema": "../../schema/opd.schema.json",
+  "$schema": "../../../schema/opd.schema.json",
   "launch": {
     "type": "opd",
     "devices": 2,
@@ -7,13 +7,19 @@
       "HF_HUB_OFFLINE": "1"
     }
   },
-  "experiment_name": "jlens-full-legacy",
+  "experiment_name": "jlens-lora-legacy",
   "trackio_project": "opdlens-gsm8k",
   "seed": 42,
   "student": {
     "model_id": "Qwen/Qwen3.5-2B",
     "dtype": "bf16",
-    "attn_impl": "sdpa"
+    "attn_impl": "sdpa",
+    "lora": {
+      "r": 8,
+      "alpha": 32,
+      "dropout": 0.05,
+      "target_modules": "all-linear"
+    }
   },
   "teacher": {
     "model_id": "Qwen/Qwen3.5-9B",
@@ -66,11 +72,11 @@
   "train_steps": 300,
   "eval_steps": 50,
   "eval_at_start": true,
-  "checkpoint_interval": 100,
-  "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/jlens-full-legacy",
+  "checkpoint_interval": 50,
+  "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/jlens-lora-legacy",
   "optimizer_config": {
     "class_name": "AdamW",
-    "lr": 2e-06,
+    "lr": 5e-05,
     "betas": [
       0.9,
       0.999
@@ -81,5 +87,6 @@
     "class_name": "ConstantLR",
     "factor": 1.0
   },
-  "clip_grad_norm": 1.0
+  "clip_grad_norm": 1.0,
+  "max_checkpoints": 0
 }

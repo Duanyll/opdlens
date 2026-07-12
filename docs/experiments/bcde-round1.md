@@ -89,12 +89,12 @@ The same commit is also stored in the Slurm job comment.
 | `hiddenmse-lora-aux1.94` | `current-hidden-shared` | `experiments/gsm8k_round1/hiddenmse_lora_aux1p94.jsonc` | `d6fceee` | 4154 | complete; step-300 acc 0.7718; replaces underweighted 4141 |
 | `symjlens-full-aux0.01` | `current-sym-shared` | `experiments/gsm8k_round1/symjlens_full_aux0p01.jsonc` | `4476408` | 4167 | complete; step-300 acc 0.8211; replaces 4158 |
 | `symjlens-lora-aux0.01` | `current-sym-shared` | `experiments/gsm8k_round1/symjlens_lora_aux0p01.jsonc` | `ce66f87` | 4168 | complete; step-300 acc 0.7832; replaces 4159 |
-| `logitlens-full-legacy` | `legacy-bce-full` | `experiments/gsm8k_round1/logitlens_full_legacy.jsonc` | `c17ca55` | 4160 | complete; step-300 acc 0.7801 |
-| `jlens-full-legacy` | `legacy-bce-full` | `experiments/gsm8k_round1/jlens_full_legacy.jsonc` | `80b92c0` | 4161 | complete; step-300 acc 0.7733 |
-| `symjlens-full-legacy` | `legacy-bce-full` | `experiments/gsm8k_round1/symjlens_full_legacy.jsonc` | `810ab6f` | 4169 | complete; step-300 acc 0.8014; replaces 4162 |
-| `logitlens-lora-legacy` | `legacy-bce-lora-hybrid` | `experiments/gsm8k_round1/logitlens_lora_legacy.jsonc` | `3c32077` | 4171 | complete; step-300 acc 0.7847; replaces pending 4163 |
-| `jlens-lora-legacy` | `legacy-bce-lora-hybrid` | `experiments/gsm8k_round1/jlens_lora_legacy.jsonc` | `fed3cb2` | 4172 | complete; step-300 acc 0.7885; replaces pending 4164 |
-| `symjlens-lora-legacy` | `legacy-bce-lora-hybrid` | `experiments/gsm8k_round1/symjlens_lora_legacy.jsonc` | `db69357` | 4170 | complete; step-300 acc 0.7877; replaces 4165 |
+| `logitlens-full-legacy` | `legacy-bce-full` | `experiments/legacy/gsm8k/logitlens_full_legacy.jsonc` | `c17ca55` | 4160 | complete; step-300 acc 0.7801 |
+| `jlens-full-legacy` | `legacy-bce-full` | `experiments/legacy/gsm8k/jlens_full_legacy.jsonc` | `80b92c0` | 4161 | complete; step-300 acc 0.7733 |
+| `symjlens-full-legacy` | `legacy-bce-full` | `experiments/legacy/gsm8k/symjlens_full_legacy.jsonc` | `810ab6f` | 4169 | complete; step-300 acc 0.8014; replaces 4162 |
+| `logitlens-lora-legacy` | `legacy-bce-lora-hybrid` | `experiments/legacy/gsm8k/logitlens_lora_legacy.jsonc` | `3c32077` | 4171 | complete; step-300 acc 0.7847; replaces pending 4163 |
+| `jlens-lora-legacy` | `legacy-bce-lora-hybrid` | `experiments/legacy/gsm8k/jlens_lora_legacy.jsonc` | `fed3cb2` | 4172 | complete; step-300 acc 0.7885; replaces pending 4164 |
+| `symjlens-lora-legacy` | `legacy-bce-lora-hybrid` | `experiments/legacy/gsm8k/symjlens_lora_legacy.jsonc` | `db69357` | 4170 | complete; step-300 acc 0.7877; replaces 4165 |
 
 ## Monitoring
 

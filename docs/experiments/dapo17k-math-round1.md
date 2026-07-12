@@ -131,11 +131,12 @@ attempt.
 
 Within each finetune mode, the five current configs and the three legacy BCE configs
 each differ only in `arm`, `experiment_name`, and `checkpoint_root` inside their
-respective profile. `tests/test_spine.py` validates all configs through `OpdTrainer`
-and compares the remaining spine byte-for-byte. The dataset revisions, full-MATH
-protocol, two-GPU allocation, legacy recipe, and LoRA checkpoint policy are pinned.
+respective profile — each matrix was derived from one base config, so the remaining
+spine is identical by construction. The dataset revisions, full-MATH protocol,
+two-GPU allocation, legacy recipe, and LoRA checkpoint policy are pinned.
 
-The 2026-07-12 02:16 HKT config audit passed all eight spine/protocol tests. A
+The 2026-07-12 02:16 HKT config audit confirmed all eight configs share their
+profile spine byte-for-byte. A
 subsequent exact execution-path probe established that the original `opdlens`
 console parent imported the archived package correctly, but the torchrun workers it
 spawned imported `opdlens` from the shared checkout. Jobs 4176-4185 were still
@@ -277,12 +278,12 @@ no GPU. All replacements have matching pre-launch commits, comments, and snapsho
 
 | Run | Profile | Config | Commit | Slurm job | State |
 |---|---|---|---|---|---|
-| `logitlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `experiments/dapo17k_math_round1/logitlens_full_legacy.jsonc` | `7d44085` | 4240 | completed; step-300 acc 0.6410 |
-| `logitlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `experiments/dapo17k_math_round1/logitlens_lora_legacy.jsonc` | `ce36408` | 4241 | completed; step-300 acc 0.6620 |
-| `jlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `experiments/dapo17k_math_round1/jlens_full_legacy.jsonc` | `bc45773` | 4242 | completed; step-300 acc 0.6462 |
-| `jlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `experiments/dapo17k_math_round1/jlens_lora_legacy.jsonc` | `25b3920` | 4243 | completed; step-300 acc 0.6390 |
-| `symjlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `experiments/dapo17k_math_round1/symjlens_full_legacy.jsonc` | `a522055` | 4244 | completed; step-300 acc 0.6418 |
-| `symjlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `experiments/dapo17k_math_round1/symjlens_lora_legacy.jsonc` | `29298cf` | 4245 | completed; step-300 acc 0.6278 |
+| `logitlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `experiments/legacy/dapo17k_math/logitlens_full_legacy.jsonc` | `7d44085` | 4240 | completed; step-300 acc 0.6410 |
+| `logitlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `experiments/legacy/dapo17k_math/logitlens_lora_legacy.jsonc` | `ce36408` | 4241 | completed; step-300 acc 0.6620 |
+| `jlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `experiments/legacy/dapo17k_math/jlens_full_legacy.jsonc` | `bc45773` | 4242 | completed; step-300 acc 0.6462 |
+| `jlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `experiments/legacy/dapo17k_math/jlens_lora_legacy.jsonc` | `25b3920` | 4243 | completed; step-300 acc 0.6390 |
+| `symjlens-full-legacy-chunk256vllm020` | `legacy-bce-full` | `experiments/legacy/dapo17k_math/symjlens_full_legacy.jsonc` | `a522055` | 4244 | completed; step-300 acc 0.6418 |
+| `symjlens-lora-legacy-chunk256vllm020` | `legacy-bce-lora-hybrid` | `experiments/legacy/dapo17k_math/symjlens_lora_legacy.jsonc` | `29298cf` | 4245 | completed; step-300 acc 0.6278 |
 
 The generator/config implementation is commit `7cf7b0e`. Every row then receives
 its own empty pre-launch commit so that its immutable snapshot and Slurm comment

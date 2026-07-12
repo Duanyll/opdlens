@@ -1,5 +1,5 @@
 {
-  "$schema": "../../schema/opd.schema.json",
+  "$schema": "../../../schema/opd.schema.json",
   "launch": {
     "type": "opd",
     "devices": 2,
@@ -9,7 +9,7 @@
       "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"
     }
   },
-  "experiment_name": "jlens-full-legacy-chunk256vllm020",
+  "experiment_name": "symjlens-full-legacy-chunk256vllm020",
   "trackio_project": "opdlens-math",
   "seed": 42,
   "student": {
@@ -23,7 +23,7 @@
     "attn_impl": "sdpa"
   },
   "arm": {
-    "type": "jspace",
+    "type": "symmetric_jlens",
     "aux_weight": 0.01,
     "aux_token_policy": "shared",
     "teacher_layers": [
@@ -32,7 +32,8 @@
       24
     ],
     "temperature": 1.0,
-    "jacobian_path": "/gdata/users/duanyll/jlens/qwen3p5_9b_v2/lens.pt"
+    "student_jacobian_path": "/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens-cot.pt",
+    "teacher_jacobian_path": "/gdata/users/duanyll/jlens/qwen3p5_9b_v2/lens.pt"
   },
   "base_beta": 0.0,
   "base_temperature": 1.0,
@@ -81,7 +82,7 @@
   "eval_steps": 100,
   "eval_at_start": true,
   "checkpoint_interval": 100,
-  "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/dapo17k-math/jlens-full-legacy-chunk256vllm020",
+  "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/dapo17k-math/symjlens-full-legacy-chunk256vllm020",
   "optimizer_config": {
     "class_name": "AdamW",
     "lr": 2e-06,
