@@ -30,11 +30,11 @@ search (§4) has now finished its first pass and finds several configs that edge
 **above** A — C jlens + reverse-KL 0.846, B at the single deep layer 24 0.845, E
 symjlens + reverse-KL 0.841 — but **every gap is ≤ 1 se (0.011), so no arm beats A by
 more than a tie-margin yet.** The clearest lever is **reverse-KL on the Jacobian arms**
-(C 0.835→0.846, E 0.836→0.841; it does *not* help logit-lens). A refine round (§4)
-crossing each arm's best layer × best knob is landing: the first finals show B's l24
-knobs were **compensatory, not additive** (neither top_k nor low aux_weight beats plain
-l24), so **B's best stays plain l24 = 0.845**; the C/E `[12,20]×reverse` crosses are
-still training (E provisionally ~0.846).
+(C 0.835→0.846, E 0.836→0.841; it does *not* help logit-lens). The refine round (§4) is
+now in: B's knobs were **compensatory, not additive** (best stays plain l24 = 0.845),
+**top_k does not stack with reverse-KL** (it hurts both Jacobian champions), and reverse-KL
+**prefers the deep [16,24] pair** for C. Leaders unchanged (C [16,24]rev 0.846, B l24
+0.845 — both ties). Next: push reverse-KL deeper ([20,24]/[24,28]) and tune its aux_weight.
 
 ## 1. Repro — GKD spine (GSM8K)
 
@@ -169,14 +169,18 @@ the [16,24] aux was over-weighted / too broad.
 |---|---|---|---|
 | B | l24 × top_k=200 | 0.842 | ≈ plain l24 (0.845) — no gain |
 | B | l24 × aux_weight=0.003 | 0.834 | < plain l24 — hurts |
-| B | l24 × top_k=200 × aux_weight=0.003 | 0.841‡ (s250) | provisional |
-| C | [12,20] × reverse | 0.831‡ (s250) | provisional |
-| E | [12,20] × reverse | 0.846‡ (s250) | provisional — promising |
+| B | l24 × top_k=200 × aux_weight=0.003 | 0.836 | = A, < plain l24 |
+| C | [12,20] × reverse | 0.833 | < [16,24]rev (0.846) **and** [12,20]fwd (0.841) |
+| C | l20 × reverse | 0.837 | < [16,24]rev — single layer no better |
+| C | [16,24] rev × top_k=200 | 0.838 | < [16,24]rev (0.846) — top_k **hurts** |
+| E | [12,20] × reverse | 0.840 | ≈ [16,24]rev (0.841) — tie |
+| E | [16,24] rev × top_k=200 | 0.836 | < [16,24]rev (0.841) — top_k **hurts** |
 
-**Reading:** the B [16,24] knobs (top_k=200, low aux_weight) turned out **compensatory,
-not additive** — they fixed the *harmful* [16,24] pair but do **not** improve the
-already-good single layer l24 (both crossings land at/below plain l24). So **B's best
-stays plain l24 = 0.845.** The C/E `[12,20] × reverse` crosses are still training; E is
-provisionally strong (0.846 @ s250) but not yet final. A wider **reverse-KL layer sweep**
-for C/E (layers [8,12]/[12,16]/[16,20]/[12,24] for C, [24,28]/[12,24] for E) is queued
-behind these to map where reverse-KL peaks.
+**Reading:** two clean negatives this round. (1) **top_k does not stack with reverse-KL** —
+it was a B-only *compensatory* knob (it rescued the harmful [16,24] pair) and it actively
+*hurts* both Jacobian champions (C 0.846→0.838, E 0.841→0.836). (2) **Reverse-KL prefers
+the deep [16,24] pair for C**: `[12,20]×reverse` (0.833) is worse than *both* its parents,
+i.e. the forward layer preference ([12,20] > [16,24]) flips under reverse. So the leaders
+are unchanged — **C [16,24]rev = 0.846** and **B plain l24 = 0.845**, both still ties vs A.
+Next probe (queued): push C/E reverse-KL *deeper* ([20,24], [24,28]) and tune `aux_weight`
+on the champion, since the aux is clearly helping and its weight is untuned for reverse.
