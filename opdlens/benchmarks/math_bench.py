@@ -169,6 +169,15 @@ class AimoBenchmark(MathVerifyBenchmark):
     question_key: str = "problem"
     answer_key: str = "answer"
 
+    def _load_rows(self, split: str | None) -> Any:
+        # The eval loop always requests the "test" split, but this validation set
+        # ships only a "train" split — pin to our own ``split`` and ignore the hint.
+        if self.path is not None:
+            return super()._load_rows(split)
+        if self.hf_id is None:
+            raise ValueError("aimo needs a path or hf_id")
+        return read_hf(self.hf_id, self.split)
+
 
 class MathTrainBenchmark(MathVerifyBenchmark):
     type: Literal["math_train"] = "math_train"
