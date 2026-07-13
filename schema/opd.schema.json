@@ -429,6 +429,11 @@
           "title": "Kl",
           "type": "string"
         },
+        "aux_top_k": {
+          "default": 0,
+          "title": "Aux Top K",
+          "type": "integer"
+        },
         "teacher_layers": {
           "default": [],
           "items": {
@@ -499,6 +504,11 @@
           ],
           "title": "Kl",
           "type": "string"
+        },
+        "aux_top_k": {
+          "default": 0,
+          "title": "Aux Top K",
+          "type": "integer"
         },
         "teacher_layers": {
           "default": [],
@@ -648,6 +658,11 @@
           "title": "Kl",
           "type": "string"
         },
+        "aux_top_k": {
+          "default": 0,
+          "title": "Aux Top K",
+          "type": "integer"
+        },
         "teacher_layers": {
           "default": [],
           "items": {
@@ -702,6 +717,11 @@
           ],
           "title": "Kl",
           "type": "string"
+        },
+        "aux_top_k": {
+          "default": 0,
+          "title": "Aux Top K",
+          "type": "integer"
         },
         "teacher_layers": {
           "default": [],
@@ -1202,6 +1222,11 @@
           "title": "Kl",
           "type": "string"
         },
+        "aux_top_k": {
+          "default": 0,
+          "title": "Aux Top K",
+          "type": "integer"
+        },
         "teacher_layers": {
           "default": [],
           "items": {
@@ -1350,6 +1375,11 @@
       ],
       "default": null,
       "title": "Trackio Project"
+    },
+    "trackio_system_metrics": {
+      "default": false,
+      "title": "Trackio System Metrics",
+      "type": "boolean"
     },
     "student": {
       "$ref": "#/$defs/LanguageModel"

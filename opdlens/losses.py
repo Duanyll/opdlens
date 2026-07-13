@@ -153,6 +153,23 @@ def sample_aux_token_index(
     return idx
 
 
+def _teacher_top_k(
+    student_logits: torch.Tensor, teacher_logits: torch.Tensor, top_k: int
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Restrict both logit sets to the teacher's per-position top-``k`` vocab ids.
+
+    Selecting on the teacher keeps the head of the distribution we trust and drops the
+    long low-probability tail, where the plain logit lens is mostly noise; the KL is
+    then renormalised over the ``k`` survivors. Selection is on raw logits (monotone
+    with the softmax, so temperature-invariant). ``k >= V`` is a no-op — the KL is
+    permutation-invariant — so a large ``k`` cleanly disables truncation.
+    """
+    student_logits, teacher_logits = _slice_common_vocab(student_logits, teacher_logits)
+    k = min(top_k, teacher_logits.shape[-1])
+    keep = teacher_logits.topk(k, dim=-1).indices  # [n, k], chosen on the teacher
+    return student_logits.gather(-1, keep), teacher_logits.gather(-1, keep)
+
+
 def lens_kl(
     student_hidden: torch.Tensor,
     teacher_hidden: torch.Tensor,
@@ -163,6 +180,7 @@ def lens_kl(
     temperature: float = 1.0,
     aux_max_tokens: int = 512,
     kl: KLDir = "forward",
+    top_k: int = 0,
     token_index: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Shared vocab-space aux for arms B/C/E.
@@ -170,7 +188,9 @@ def lens_kl(
     B uses plain logit-lens readouts on both sides, C transports only the teacher
     hidden state, and E transports both sides through their offline-fit Jacobians.
     Supervised completion positions are subsampled to ``aux_max_tokens`` *before*
-    either readout, so the unembed runs on ``[n, d]``, not ``[T, d]``.
+    either readout, so the unembed runs on ``[n, d]``, not ``[T, d]``. ``top_k > 0``
+    truncates the divergence to the teacher's per-position top-``k`` vocab ids
+    (``0`` = full vocab, the default and pre-knob behaviour).
     """
     idx = (
         sample_aux_token_index(loss_mask, aux_max_tokens)
@@ -181,6 +201,10 @@ def lens_kl(
         return student_hidden.new_zeros(())
     student_logits = student_readout(student_hidden[idx])  # [n, V]
     teacher_logits = teacher_readout(teacher_hidden[idx])  # [n, V]
+    if top_k > 0:
+        student_logits, teacher_logits = _teacher_top_k(
+            student_logits, teacher_logits, top_k
+        )
     return _directed_kl(teacher_logits, student_logits, temperature, kl).mean()
 
 
