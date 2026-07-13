@@ -1,0 +1,19 @@
+[project]
+name = "lens-visualizer"
+version = "0.1.0"
+description = "Interactive per-layer LogitLens vs Jacobian-Lens vocabulary visualizer"
+readme = "README.md"
+requires-python = ">=3.10"
+
+dependencies = [
+    "torch>=2.4",
+    "transformers>=5.5",
+    "huggingface_hub",
+    "numpy",
+    "gradio>=4.44",
+    # jlens core lives in the sibling repo; installed editable below.
+    "jlens",
+]
+
+[tool.uv.sources]
+jlens = { path = "../jacobian-lens", editable = true }
