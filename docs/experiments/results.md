@@ -42,8 +42,11 @@ fluctuations: E's 3-seed mean is **0.842** (+0.006 vs A, well under 1 se) and C'
 temperature *levers* are real and reshape the depth response, but they do not translate into a
 robust GSM8K accuracy win over plain OPD (A). Negatives confirmed: top_k does not stack with
 reverse-KL; B's knobs are compensatory (best stays plain l24 = 0.845); temperature=2 is
-arm-specific (helps E, hurts B, ~neutral C). Attention now shifts to **round 3 (DAPO→MATH, §5)**,
-where the same C/E levers are being tested against a MATH-calibrated lens.
+arm-specific (helps E, hurts B, ~neutral C). **Round 3 (DAPO→MATH, §5) is now complete:** the reverse-KL direction carries over (rev > fwd for both
+C and E on MATH), and a MATH-calibrated lens lifts C [12,16]-rev to **0.682 = parity with A (0.684)** —
+but, exactly as on GSM8K, **no aux config beats plain OPD.** The earlier "reverse-KL is a MATH drag"
+scare was the *stale GSM8K lens*, not the KL direction. The settled cross-round finding: the lens/KL
+levers reshape the distillation signal and pull aux *up to* A, but do not clear A on accuracy.
 
 ## 1. Repro — GKD spine (GSM8K)
 
@@ -302,16 +305,27 @@ teacher ceilings GSM8K 0.953 / MATH-5000 0.849.
 | E symjlens [16,24] t2 | v2 (Wave A) | reverse | 0.668 | step-300 final |
 | C jlens [12,16] | math (Wave B) | reverse | **0.682** | step-300 final |
 | C jlens [12,16] | math (Wave B) | forward | 0.662 | step-300 final |
-| E symjlens [16,24] t2 | math (Wave B) | reverse | 0.672‡ (s200) | 4442 running |
-| E symjlens [16,24] t2 | math (Wave B) | forward | 0.664‡ (s200) | 4443 running |
+| E symjlens [16,24] t2 | math (Wave B) | reverse | 0.668 | step-300 final |
+| E symjlens [16,24] t2 | math (Wave B) | forward | 0.650 | step-300 final |
 
-**Reading (Wave A final; Wave B C final, Wave B E still training).** Plain **A `logits` (0.684)**
-remains the MATH reference. The headline update: with the **MATH-calibrated lens, C [12,16] reverse-KL
-recovers to 0.682** — parity with A and **+0.018 over the identical config on the stale GSM8K lens**
-(Wave-A C-rev 0.664). So the Wave-A reverse-KL "drag" was **largely the stale lens, not reverse-KL
-itself**: recalibrating the lens to the domain lifts C-rev back to A-level. Within Wave B, reverse also
-edges forward for C (rev 0.682 vs fwd 0.662) — but the two crossed over between steps (fwd led 0.676 vs
-0.654 at s200), so the rev-vs-fwd margin is inside MATH-500 noise (se 0.022) on a single seed. **E's
-2×2 is still training** (rev 0.672 / fwd 0.664 @ s200); the direction verdict holds until E's step-300.
-**Net so far: the calibrated lens closes C up to A on MATH — but no aux config has yet *beaten* A**, and
-the one parity result (C-rev-math 0.682 ≈ A 0.684) is a single seed within 1 se, i.e. a tie, not a lead.
+**Reading (both waves final — key question resolved).** The full 2×2 (lens × KL direction), MATH-500
+step-300 (reference: A logits **0.684**, B l24 0.670, anchor 0.646):
+
+| arm | v2 lens · rev | math lens · rev | math lens · fwd |
+|---|---|---|---|
+| C jlens [12,16] | 0.664 | **0.682** | 0.662 |
+| E symjlens [16,24] t2 | 0.668 | 0.668 | 0.650 |
+
+1. **Reverse-KL is *not* a drag — forward-KL is the weaker direction on MATH.** With the MATH lens,
+   reverse beats forward for *both* Jacobian arms (C 0.682 > 0.662; E 0.668 > 0.650). The Wave-A C
+   step-100 dip to 0.642 was transient: C-rev finished at 0.664 (≥ anchor) even on the stale lens.
+2. **The apparent drag on C was the *stale lens*.** Recalibrating the lens to the domain lifts C-rev
+   **+0.018** (0.664 → 0.682, up to A-parity). For **E the lens is neutral** (rev 0.668 on either
+   lens) — the symmetric two-sided readout is apparently insensitive to which domain the lens was
+   fit on, where C's teacher-only readout is not.
+
+**Bottom line:** with reverse-KL + a MATH-calibrated lens the best aux arm (C [12,16] = **0.682**)
+**ties A (0.684)** on MATH — it no longer trails. But it does **not beat** A, and it is a single seed
+within 1 MATH-500 se. Round 3 lands exactly where round-2 GSM8K did: **aux reaches parity with plain
+OPD, not past it.** Direction (reverse-KL) and lens-domain-calibration are both genuine levers; neither
+buys a win over A on these metrics.
