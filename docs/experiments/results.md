@@ -31,7 +31,10 @@ search (§4) has now finished its first pass and finds several configs that edge
 symjlens + reverse-KL 0.841 — but **every gap is ≤ 1 se (0.011), so no arm beats A by
 more than a tie-margin yet.** The clearest lever is **reverse-KL on the Jacobian arms**
 (C 0.835→0.846, E 0.836→0.841; it does *not* help logit-lens). A refine round (§4)
-crosses each arm's best layer × best knob.
+crossing each arm's best layer × best knob is landing: the first finals show B's l24
+knobs were **compensatory, not additive** (neither top_k nor low aux_weight beats plain
+l24), so **B's best stays plain l24 = 0.845**; the C/E `[12,20]×reverse` crosses are
+still training (E provisionally ~0.846).
 
 ## 1. Repro — GKD spine (GSM8K)
 
@@ -112,13 +115,14 @@ layer ~27-28; jlens earlier, ~0.66 → ~20-21). All step-300 finals. Anchors: **
 
 | layers | acc | | layers | acc |
 |---|---|---|---|---|
-| **24** | **0.845** | | 30 | 0.833 |
-| [16,20,24,28] | 0.836 | | 26 / 27 | 0.832 |
-| [27,30] | 0.836 | | [24,28] | 0.832 |
-| 20 / 28 | 0.833 | | [16,24] (anchor) | 0.819 |
+| **24** | **0.845** | | 25 / 26 / 27 | 0.832 |
+| [16,20,24,28] | 0.836 | | [24,28] | 0.832 |
+| [27,30] | 0.836 | | 23 | 0.826 |
+| 20 / 28 / 30 | 0.833 | | [16,24] (anchor) | 0.819 |
 
-A single **deep layer 24** is the B peak (0.845 ≈ A+0.008). Pairing 16 with a deep
-layer, or averaging four layers, dilutes it back toward A.
+A single **deep layer 24** is the B peak (0.845 ≈ A+0.008), and a **sharp** one — the
+immediate neighbours l23 (0.826) and l25 (0.832) both sit ~0.015–0.02 below it. Pairing
+16 with a deep layer, or averaging four layers, dilutes back toward A.
 
 ### B knob sweeps (at [16,24])
 
@@ -159,9 +163,20 @@ the [16,24] aux was over-weighted / too broad.
 | B [16,24] top_k=200 | 0.839 | +0.003 |
 | E symjlens [12,20] fwd | 0.839 | +0.003 |
 
-### Refine (in flight) — best layer × best knob per arm
+### Refine — best layer × best knob per arm
 
-- C jlens **[12,20] × reverse-KL** (best forward C layer × best C lever)
-- E symjlens **[12,20] × reverse-KL**
-- B logit_lens **l24 × top_k=200**
-- B logit_lens **l24 × aux_weight 0.003**
+| arm | config | acc | vs baseline |
+|---|---|---|---|
+| B | l24 × top_k=200 | 0.842 | ≈ plain l24 (0.845) — no gain |
+| B | l24 × aux_weight=0.003 | 0.834 | < plain l24 — hurts |
+| B | l24 × top_k=200 × aux_weight=0.003 | 0.841‡ (s250) | provisional |
+| C | [12,20] × reverse | 0.831‡ (s250) | provisional |
+| E | [12,20] × reverse | 0.846‡ (s250) | provisional — promising |
+
+**Reading:** the B [16,24] knobs (top_k=200, low aux_weight) turned out **compensatory,
+not additive** — they fixed the *harmful* [16,24] pair but do **not** improve the
+already-good single layer l24 (both crossings land at/below plain l24). So **B's best
+stays plain l24 = 0.845.** The C/E `[12,20] × reverse` crosses are still training; E is
+provisionally strong (0.846 @ s250) but not yet final. A wider **reverse-KL layer sweep**
+for C/E (layers [8,12]/[12,16]/[16,20]/[12,24] for C, [24,28]/[12,24] for E) is queued
+behind these to map where reverse-KL peaks.
