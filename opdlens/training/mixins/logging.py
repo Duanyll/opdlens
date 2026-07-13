@@ -41,6 +41,8 @@ class LoggingMixin(BaseTrainer):
     run_id: str | None = None
     runs_root: str = "./runs"
     trackio_project: str | None = None
+    trackio_system_metrics: bool = False
+    """Enable Trackio's automatic CPU/GPU telemetry collectors."""
 
     _run_dir: Path | None = PrivateAttr(default=None)
     _metrics_file: Any = PrivateAttr(default=None)
@@ -88,6 +90,8 @@ class LoggingMixin(BaseTrainer):
             name=self.experiment_name,
             config=config,
             resume="allow",
+            auto_log_cpu=self.trackio_system_metrics,
+            auto_log_gpu=self.trackio_system_metrics,
         )
         self._tracker_active = True
         logger.info("Tracker initialized at %s", self._run_dir)

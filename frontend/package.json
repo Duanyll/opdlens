@@ -1,0 +1,8 @@
+{
+  "name": "opdlens-trackio-frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}

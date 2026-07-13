@@ -1376,6 +1376,11 @@
       "default": null,
       "title": "Trackio Project"
     },
+    "trackio_system_metrics": {
+      "default": false,
+      "title": "Trackio System Metrics",
+      "type": "boolean"
+    },
     "student": {
       "$ref": "#/$defs/LanguageModel"
     },
