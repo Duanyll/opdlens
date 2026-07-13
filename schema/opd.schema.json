@@ -2,6 +2,7 @@
   "$defs": {
     "AimeBenchmark": {
       "additionalProperties": false,
+      "description": "AIME competition set (30 problems). Tiny and high-variance, so eval with\navg@k (the OPRD protocol uses k=16 at temperature 0.7). ``year`` picks the\nsource dataset; the boxed-vs-bare gold is handled by ``extract_answer``.",
       "properties": {
         "type": {
           "const": "aime",
@@ -123,11 +124,141 @@
         },
         "year": {
           "default": 2024,
+          "enum": [
+            2024,
+            2025
+          ],
           "title": "Year",
           "type": "integer"
         }
       },
       "title": "AimeBenchmark",
+      "type": "object"
+    },
+    "AimoBenchmark": {
+      "additionalProperties": false,
+      "description": "AI-MO validation AMC = AMC 2022 + 2023 (83 problems); the OPRD 'AIMO' set.\nGold ``answer`` is a numeric string (e.g. ``142.0``), graded by math_verify.",
+      "properties": {
+        "type": {
+          "const": "aimo",
+          "default": "aimo",
+          "title": "Type",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "hf_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "AI-MO/aimo-validation-amc",
+          "title": "Hf Id"
+        },
+        "hf_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hf Name"
+        },
+        "split": {
+          "default": "train",
+          "title": "Split",
+          "type": "string"
+        },
+        "question_key": {
+          "default": "problem",
+          "title": "Question Key",
+          "type": "string"
+        },
+        "answer_key": {
+          "default": "answer",
+          "title": "Answer Key",
+          "type": "string"
+        },
+        "max_samples": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Samples"
+        },
+        "system_prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "Solve the following problem step by step. Put your final answer within \\boxed{}.",
+          "title": "System Prompt"
+        },
+        "answer_instruction": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Answer Instruction"
+        },
+        "few_shot_num": {
+          "default": 0,
+          "title": "Few Shot Num",
+          "type": "integer"
+        },
+        "eval_temperature": {
+          "default": 0.6,
+          "title": "Eval Temperature",
+          "type": "number"
+        },
+        "eval_top_p": {
+          "default": 1.0,
+          "title": "Eval Top P",
+          "type": "number"
+        },
+        "eval_max_tokens": {
+          "default": 1024,
+          "title": "Eval Max Tokens",
+          "type": "integer"
+        },
+        "avg_k": {
+          "default": 8,
+          "title": "Avg K",
+          "type": "integer"
+        }
+      },
+      "title": "AimoBenchmark",
       "type": "object"
     },
     "DapoMathBenchmark": {
@@ -1441,6 +1572,7 @@
         "discriminator": {
           "mapping": {
             "aime": "#/$defs/AimeBenchmark",
+            "aimo": "#/$defs/AimoBenchmark",
             "dapo_math": "#/$defs/DapoMathBenchmark",
             "gsm8k": "#/$defs/Gsm8kBenchmark",
             "math": "#/$defs/MathBenchmark",
@@ -1466,6 +1598,9 @@
             "$ref": "#/$defs/AimeBenchmark"
           },
           {
+            "$ref": "#/$defs/AimoBenchmark"
+          },
+          {
             "$ref": "#/$defs/MathTrainBenchmark"
           }
         ]
@@ -1489,6 +1624,7 @@
       "discriminator": {
         "mapping": {
           "aime": "#/$defs/AimeBenchmark",
+          "aimo": "#/$defs/AimoBenchmark",
           "dapo_math": "#/$defs/DapoMathBenchmark",
           "gsm8k": "#/$defs/Gsm8kBenchmark",
           "math": "#/$defs/MathBenchmark",
@@ -1512,6 +1648,9 @@
         },
         {
           "$ref": "#/$defs/AimeBenchmark"
+        },
+        {
+          "$ref": "#/$defs/AimoBenchmark"
         },
         {
           "$ref": "#/$defs/MathTrainBenchmark"
