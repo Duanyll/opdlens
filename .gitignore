@@ -25,3 +25,9 @@ scratch/
 .DS_Store
 .idea/
 .vscode/
+
+# visual workspace local artifacts
+visual_workspace/.venv/
+visual_workspace/__pycache__/
+visual_workspace/lenses/
+visual_workspace/*.py[cod]
