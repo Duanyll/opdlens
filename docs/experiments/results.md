@@ -9,8 +9,12 @@ Arms: **A** `logits` (plain OPD) · **B** `logit_lens` · **C** `jspace` (Jacobi
 Numbers are **final step-300 test accuracy** unless marked `‡` (still training — the
 value is the latest logged step, provisional).
 
-- GSM8K test = 1319 examples, se ≈ 0.011. MATH test = 2500 examples, se ≈ 0.009.
-  **Treat gaps under ~0.015 as ties.**
+- GSM8K test = 1319 examples, se ≈ 0.011 — **treat gaps < ~0.015 as ties.** MATH sets: the
+  in-training eval is **MATH-500** (`HuggingFaceH4/MATH-500`, n=500, se ≈ 0.022 — MATH-500 gaps
+  < ~0.03 are ties); the round-3 finals are the full **MATH-5000** (`hendrycks_math` test, n=5000,
+  se ≈ 0.0067) + AIME24/25 + AIMO (Avg@16). The round-1/2 MATH tables below are also the full
+  MATH-5000 in-training eval (se ≈ 0.0067; the earlier "2500 / se 0.009" was a doc error — those
+  configs ran `type:"math"` with `eval_max_samples:null` = all 5000).
 - Source: the `eval[...] step N: acc=` lines in `logs/<jobname>_<jobid>.log`. Refresh:
   ```bash
   for f in logs/*.log; do
@@ -30,13 +34,16 @@ search (§4) has now finished its first pass and finds several configs that edge
 **above** A — C jlens + reverse-KL 0.846, B at the single deep layer 24 0.845, E
 symjlens + reverse-KL 0.841 — but **every gap is ≤ 1 se (0.011), so no arm beats A by
 more than a tie-margin yet.** The clearest lever is **reverse-KL on the Jacobian arms**
-(C 0.835→0.846, E 0.836→0.841; it does *not* help logit-lens). **Two configs have now
-cleared A by more than 1 se — the first robust leads:** **E symjlens [16,24] rev × temp=2
-= 0.852** (+0.016) and **C jlens [12,16] × reverse = 0.851** (+0.015). Both are *single
-seeds ~0.0002 past the 0.015 threshold*, so promising leads rather than settled wins — the
-follow-up grid probes their neighbourhoods for corroboration. Negatives confirmed: top_k
-does not stack with reverse-KL; B's knobs are compensatory (best stays plain l24 = 0.845);
-temperature=2 is arm-specific (helps E, hurts B, ~neutral C).
+(C 0.835→0.846, E 0.836→0.841; it does *not* help logit-lens). **Seed replication (s42–s44)
+has now settled the two single-seed leads — and neither survives.** The peaks (E symjlens
+[16,24] rev × temp=2 = 0.852, C jlens [12,16] × reverse = 0.851) were upward seed
+fluctuations: E's 3-seed mean is **0.842** (+0.006 vs A, well under 1 se) and C's is **0.835**
+(≈ A, a tie). **No GSM8K config beats A by more than a tie-margin.** The reverse-KL /
+temperature *levers* are real and reshape the depth response, but they do not translate into a
+robust GSM8K accuracy win over plain OPD (A). Negatives confirmed: top_k does not stack with
+reverse-KL; B's knobs are compensatory (best stays plain l24 = 0.845); temperature=2 is
+arm-specific (helps E, hurts B, ~neutral C). Attention now shifts to **round 3 (DAPO→MATH, §5)**,
+where the same C/E levers are being tested against a MATH-calibrated lens.
 
 ## 1. Repro — GKD spine (GSM8K)
 
@@ -176,19 +183,18 @@ content (B), reverse-KL for the shallow workspace band (C, and B at [12,16])**.
 
 ### Leaders vs A — first configs to clear the tie-margin
 
-| config | acc | Δ vs A | |
+| config | acc (s42) | Δ vs A | |
 |---|---|---|---|
-| **E symjlens [16,24] rev × temp=2** | **0.852** | **+0.016** | > 1 se — robust (single seed) |
-| **C jlens [12,16] × reverse** | **0.851** | **+0.015** | > 1 se — robust (single seed) |
+| **E symjlens [16,24] rev × temp=2** | 0.852 | +0.016 | **seed 42 only — deflates on replication** |
+| **C jlens [12,16] × reverse** | 0.851 | +0.015 | **seed 42 only — deflates on replication** |
 | C jlens [16,24] reverse | 0.846 | +0.010 | tie |
 | B logit_lens l24 | 0.845 | +0.008 | tie |
 | E symjlens [24,28] rev | 0.848 | +0.012 | tie |
 | E symjlens [16,24] reverse | 0.841 | +0.005 | tie |
 | C jlens [12,20] fwd | 0.841 | +0.005 | tie |
 
-**Two configs finally exceed A by more than 1 se (0.011)** — but both are *single seeds*
-~0.0002 over the 0.015 threshold, so treat them as *promising leads, not settled wins*;
-the follow-up grid probes their neighbourhoods to see if the peak is real or noise.
+Two seed-42 configs cleared A by > 1 se, so we ran the **seed replication below** to check whether
+the peaks were real. **They were not** — see the next subsection: both means fall back to a tie with A.
 
 ### Refine — best layer × best knob per arm
 
@@ -251,4 +257,58 @@ knob — moving it off 0.01 (to 0.005/0.02) hurts both C and E (≈0.82, provisi
 
 Temperature is **arm-specific**: softening the aux helps **E** (its readout is on both sides,
 so a softer target may reduce over-fitting to student-lens noise) but *hurts* B and is ~neutral
-for C. This is the lever that lifted E into a robust win.
+for C. This is the lever that lifted E's *single seed* to 0.852 — see the seed check below.
+
+### Seed replication — do the two leads survive? (final)
+
+The two seed-42 leads were re-run at seeds 43 and 44 (jobs 4445/4446 = C, 4447/4448 = E; all full,
+step-300). A **robust** win needs the 3-seed mean to clear **A + 1 se = 0.847**.
+
+| lead | s42 | s43 | s44 | **mean** | Δ vs A | verdict |
+|---|---|---|---|---|---|---|
+| **C jlens [12,16] rev** | 0.851 | 0.831 | 0.823 | **0.835** | −0.001 | **not robust — ties A** |
+| **E symjlens [16,24] rev × t2** | 0.852 | 0.837 | 0.836 | **0.842** | +0.006 | **not robust — < 1 se** |
+
+**Neither lead survives.** Both seed-42 peaks were **upward fluctuations**: C's mean (0.835) lands
+right on A, and E's (0.842) keeps only a sub-1-se edge (+0.006, need +0.011). E is at least the
+*tighter* lead (seeds 0.852/0.837/0.836, range 0.016) while C is noisier (0.851/0.831/0.823, range
+0.028). **Conclusion for GSM8K: no config beats plain OPD (A = 0.836) by more than a tie-margin.**
+The reverse-KL and temp=2 levers are genuine (they shift the depth response and the seed-42 draw),
+but on GSM8K they do not buy a replicable accuracy gain over A. The direction question moves to MATH
+(§5), where the lens is being recalibrated to the domain.
+
+## 5. Round 3 — DAPO-Math-17k → MATH (reverse-KL × lens calibration)
+
+Round 3 ports the two GSM8K Jacobian leads (C jlens [12,16], E symjlens [16,24] × temp=2) onto the
+DAPO→MATH spine and runs a **2×2 that separates the KL direction from the lens calibration**:
+
+- **Wave A** — GSM8K-domain lens (`qwen3p5_9b_v2/lens.pt`), the *same* artifact the GSM8K search used
+  (jobs 4419–4422). This carries the GSM8K recipe over verbatim.
+- **Wave B** — **MATH-calibrated** lens (`qwen3p5-{9b,2b}-jlens-math.pt`, fit on hendrycks_math),
+  crossed with **forward vs reverse KL** (jobs 4440–4443). Wave B isolates the lens-calibration gain
+  from the KL-direction gain.
+
+In-training eval = **MATH-500** (n=500, se ≈ 0.022 → treat MATH-500 gaps < ~0.03 as ties). Untrained
+anchor **0.646**. Finals (queued once a leader settles) = MATH-5000 + AIME24/25 + AIMO Avg@16;
+teacher ceilings GSM8K 0.953 / MATH-5000 0.849.
+
+### MATH-500 in-training (‡ = still training, value is latest logged step)
+
+| arm · config | lens | KL | acc | status |
+|---|---|---|---|---|
+| **A logits** (baseline) | — | — | **0.684** | step-300 final |
+| B logit_lens l24 | v2 | fwd | 0.670 | step-300 final |
+| C jlens [12,16] | v2 (Wave A) | reverse | 0.666‡ (s200) | 4421 running |
+| E symjlens [16,24] t2 | v2 (Wave A) | reverse | 0.650‡ (s250) | 4422 running |
+| C jlens [12,16] | math (Wave B) | reverse | 0.660‡ (s100) | 4440 running |
+| C jlens [12,16] | math (Wave B) | forward | 0.656‡ (s100) | 4441 running |
+| E symjlens [16,24] t2 | math (Wave B) | reverse | 0.650‡ (s50) | 4442 running |
+| E symjlens [16,24] t2 | math (Wave B) | forward | 0.660‡ (s50) | 4443 running |
+
+**Reading (provisional — do NOT conclude until step-300 finals of BOTH waves are in).** As in rounds
+1–2, plain **A `logits` (0.684) still leads on MATH**; every aux arm sits near the 0.646 anchor. The
+**key open question** — was the Wave-A reverse-KL *drag* (C touched 0.642 ≤ untrained at step-100) the
+**stale GSM8K lens** or **reverse-KL itself**? — is **not yet answered**: Wave-A C has since recovered
+to 0.666, and the Wave-B forward-vs-reverse contrast is still within noise at these early steps
+(C rev 0.660 vs fwd 0.656; E rev 0.650 vs fwd 0.660 — all ≤ 1 MATH-500 se of each other and of the
+anchor). **Verdict deferred to the step-300 finals of both waves.**
