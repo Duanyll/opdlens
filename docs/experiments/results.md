@@ -30,11 +30,13 @@ search (§4) has now finished its first pass and finds several configs that edge
 **above** A — C jlens + reverse-KL 0.846, B at the single deep layer 24 0.845, E
 symjlens + reverse-KL 0.841 — but **every gap is ≤ 1 se (0.011), so no arm beats A by
 more than a tie-margin yet.** The clearest lever is **reverse-KL on the Jacobian arms**
-(C 0.835→0.846, E 0.836→0.841; it does *not* help logit-lens). The refine round (§4) is
-now in: B's knobs were **compensatory, not additive** (best stays plain l24 = 0.845),
-**top_k does not stack with reverse-KL** (it hurts both Jacobian champions), and reverse-KL
-**prefers the deep [16,24] pair** for C. Leaders unchanged (C [16,24]rev 0.846, B l24
-0.845 — both ties). Next: push reverse-KL deeper ([20,24]/[24,28]) and tune its aux_weight.
+(C 0.835→0.846, E 0.836→0.841; it does *not* help logit-lens). **Two configs have now
+cleared A by more than 1 se — the first robust leads:** **E symjlens [16,24] rev × temp=2
+= 0.852** (+0.016) and **C jlens [12,16] × reverse = 0.851** (+0.015). Both are *single
+seeds ~0.0002 past the 0.015 threshold*, so promising leads rather than settled wins — the
+follow-up grid probes their neighbourhoods for corroboration. Negatives confirmed: top_k
+does not stack with reverse-KL; B's knobs are compensatory (best stays plain l24 = 0.845);
+temperature=2 is arm-specific (helps E, hurts B, ~neutral C).
 
 ## 1. Repro — GKD spine (GSM8K)
 
@@ -152,16 +154,21 @@ the [16,24] aux was over-weighted / too broad.
 **Reverse-KL @ [16,24]:** C 0.835→0.846 (+0.011), E 0.836→0.841 (+0.005), B 0.819→0.817
 (no help). Reverse-KL helps the **Jacobian** arms, not logit-lens.
 
-### Leaders vs A (all within 1 se — ties, not wins)
+### Leaders vs A — first configs to clear the tie-margin
 
-| config | acc | Δ vs A |
-|---|---|---|
-| C jlens [16,24] reverse | 0.846 | +0.010 |
-| B logit_lens l24 | 0.845 | +0.008 |
-| E symjlens [16,24] reverse | 0.841 | +0.005 |
-| C jlens [12,20] fwd | 0.841 | +0.005 |
-| B [16,24] top_k=200 | 0.839 | +0.003 |
-| E symjlens [12,20] fwd | 0.839 | +0.003 |
+| config | acc | Δ vs A | |
+|---|---|---|---|
+| **E symjlens [16,24] rev × temp=2** | **0.852** | **+0.016** | > 1 se — robust (single seed) |
+| **C jlens [12,16] × reverse** | **0.851** | **+0.015** | > 1 se — robust (single seed) |
+| C jlens [16,24] reverse | 0.846 | +0.010 | tie |
+| B logit_lens l24 | 0.845 | +0.008 | tie |
+| E symjlens [24,28] rev | 0.845‡ (s250) | +0.008 | tie (running) |
+| E symjlens [16,24] reverse | 0.841 | +0.005 | tie |
+| C jlens [12,20] fwd | 0.841 | +0.005 | tie |
+
+**Two configs finally exceed A by more than 1 se (0.011)** — but both are *single seeds*
+~0.0002 over the 0.015 threshold, so treat them as *promising leads, not settled wins*;
+the follow-up grid probes their neighbourhoods to see if the peak is real or noise.
 
 ### Refine — best layer × best knob per arm
 
@@ -184,3 +191,30 @@ i.e. the forward layer preference ([12,20] > [16,24]) flips under reverse. So th
 are unchanged — **C [16,24]rev = 0.846** and **B plain l24 = 0.845**, both still ties vs A.
 Next probe (queued): push C/E reverse-KL *deeper* ([20,24], [24,28]) and tune `aux_weight`
 on the champion, since the aux is clearly helping and its weight is untuned for reverse.
+
+### Reverse-KL layer sweep + temperature (C/E)
+
+**C `jspace` reverse-KL, by layer pair** (aux 0.01):
+
+| layers | acc | | layers | acc |
+|---|---|---|---|---|
+| **[12,16]** | **0.851** | | [12,20] | 0.833 |
+| [16,24] | 0.846 | | [12,24] | 0.832 |
+| [8,12] | 0.839 | | [16,20] | 0.830 |
+| [20,24] / [24,28] | ‡ running | | [20] (single) | 0.837 |
+
+Non-monotonic: the reverse-KL peak is **[12,16]** (an early **workspace-band** pair, matching
+the depth prior), *not* the deep [16,24]. [16,20] and [12,24] are surprisingly poor — the
+pair has to sit squarely in the 12–16 band.
+
+**Temperature=2 on the aux (softer lens targets):**
+
+| arm · config | temp=1 | temp=2 | Δ |
+|---|---|---|---|
+| **E symjlens [16,24] rev** | 0.841 | **0.852** | **+0.011** |
+| C jlens [16,24] rev | 0.846 | 0.841 | −0.005 |
+| B logit_lens l24 | 0.845 | 0.832 | −0.013 |
+
+Temperature is **arm-specific**: softening the aux helps **E** (its readout is on both sides,
+so a softer target may reduce over-fitting to student-lens noise) but *hurts* B and is ~neutral
+for C. This is the lever that lifted E into a robust win.
