@@ -298,17 +298,20 @@ teacher ceilings GSM8K 0.953 / MATH-5000 0.849.
 |---|---|---|---|---|
 | **A logits** (baseline) | — | — | **0.684** | step-300 final |
 | B logit_lens l24 | v2 | fwd | 0.670 | step-300 final |
-| C jlens [12,16] | v2 (Wave A) | reverse | 0.666‡ (s200) | 4421 running |
-| E symjlens [16,24] t2 | v2 (Wave A) | reverse | 0.650‡ (s250) | 4422 running |
-| C jlens [12,16] | math (Wave B) | reverse | 0.660‡ (s100) | 4440 running |
-| C jlens [12,16] | math (Wave B) | forward | 0.656‡ (s100) | 4441 running |
-| E symjlens [16,24] t2 | math (Wave B) | reverse | 0.650‡ (s50) | 4442 running |
-| E symjlens [16,24] t2 | math (Wave B) | forward | 0.660‡ (s50) | 4443 running |
+| C jlens [12,16] | v2 (Wave A) | reverse | 0.664 | step-300 final |
+| E symjlens [16,24] t2 | v2 (Wave A) | reverse | 0.668 | step-300 final |
+| C jlens [12,16] | math (Wave B) | reverse | 0.654‡ (s200) | 4440 running |
+| C jlens [12,16] | math (Wave B) | forward | 0.676‡ (s200) | 4441 running |
+| E symjlens [16,24] t2 | math (Wave B) | reverse | 0.650‡ (s100) | 4442 running |
+| E symjlens [16,24] t2 | math (Wave B) | forward | 0.658‡ (s100) | 4443 running |
 
-**Reading (provisional — do NOT conclude until step-300 finals of BOTH waves are in).** As in rounds
-1–2, plain **A `logits` (0.684) still leads on MATH**; every aux arm sits near the 0.646 anchor. The
-**key open question** — was the Wave-A reverse-KL *drag* (C touched 0.642 ≤ untrained at step-100) the
-**stale GSM8K lens** or **reverse-KL itself**? — is **not yet answered**: Wave-A C has since recovered
-to 0.666, and the Wave-B forward-vs-reverse contrast is still within noise at these early steps
-(C rev 0.660 vs fwd 0.656; E rev 0.650 vs fwd 0.660 — all ≤ 1 MATH-500 se of each other and of the
-anchor). **Verdict deferred to the step-300 finals of both waves.**
+**Reading (Wave A final; Wave B still training — do NOT conclude until Wave B step-300 is in).** As in
+rounds 1–2, plain **A `logits` (0.684) leads on MATH**, with the aux arms trailing close behind but
+above the 0.646 anchor: **B l24 0.670, E [16,24]-rev-t2 0.668, C [12,16]-rev 0.664** (spread 0.020 ≈
+1 MATH-500 se — effectively a cluster below A). The Wave-A reverse-KL *drag* on C did **not** persist —
+C recovered from 0.642 (step-100) to **0.664** at step-300, landing with the pack rather than below the
+anchor. So on the stale GSM8K lens, reverse-KL is roughly **neutral by the final step, not harmful.**
+The remaining half of the key question — does the **MATH-calibrated lens** (Wave B) let reverse-KL
+*help*, or does forward-KL win regardless? — awaits Wave B: the early read tilts toward **forward**
+(C fwd **0.676** > C rev 0.654 @ step-200; E fwd 0.658 ≳ rev 0.650 @ step-100), but both gaps are ≤ 1
+MATH-500 se and provisional. **Verdict deferred to Wave B step-300.**
