@@ -10,6 +10,7 @@ so every arm reduces to identical base OPD.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import torch
@@ -18,7 +19,7 @@ from rich.progress import Progress
 
 from ..arms import Arm
 from ..losses import opd_base_loss
-from ..types import CaptureSpec
+from ..types import CaptureSpec, EvalReport
 from ..utils.logging import console, get_logger
 from .base import distributed_main
 from .mixins import (
@@ -147,6 +148,41 @@ class OpdTrainer(RolloutMixin, EvalMixin, TeacherMixin, OptimMixin, Checkpointin
 
         self.save_checkpoint(self._current_step)
         self.finish_tracker()
+
+    # --------------------------------- Eval-only ------------------------------ #
+
+    @distributed_main
+    def evaluate_only(self, checkpoint: str | None = None) -> list[EvalReport]:
+        """Run the eval spine once, no training. Loads the student (frozen) — either
+        a training ``checkpoint`` or the config's model (e.g. the teacher, by pointing
+        ``student`` at it) — inits the generator, and calls the shared ``evaluate``.
+        Never builds the teacher / optimizer / rollout data, so it is a cheap way to
+        score a checkpoint or measure a bare model's ceiling with the identical grader."""
+        self.set_seed()
+        self.resolve_run_context()
+        self.init_tracker()
+        self.load_student(trainable=False)
+        if checkpoint is not None:
+            self.load_student_checkpoint(checkpoint)
+        self.init_generation()
+        reports = self.evaluate(0)
+        self.finish_tracker()
+        return reports
+
+    def load_student_checkpoint(self, checkpoint: str) -> None:
+        """Load ONLY the student weights from a training checkpoint (a ``step_*`` dir,
+        a ``state.pt`` file, or a bare student ``state_dict``). Unlike
+        ``maybe_auto_resume`` it ignores optimizer / scheduler / step (eval has none)."""
+        path = Path(checkpoint)
+        state_file = path / "state.pt" if path.is_dir() else path
+        state = torch.load(state_file, map_location=self.device, weights_only=False)
+        student_state = (
+            state["student"]
+            if isinstance(state, dict) and "student" in state
+            else state
+        )
+        self.student.model.load_state_dict(student_state)
+        logger.info("Loaded student weights from %s", state_file)
 
     # ------------------------------ Checkpointing ----------------------------- #
 
