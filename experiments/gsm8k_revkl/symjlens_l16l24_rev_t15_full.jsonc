@@ -1,0 +1,87 @@
+{
+  "$schema": "../../schema/opd.schema.json",
+  "launch": {
+    "type": "opd",
+    "devices": 1,
+    "env": {
+      "HF_HUB_OFFLINE": "1"
+    }
+  },
+  "experiment_name": "symjlens-l16l24-rev-t15-full",
+  "trackio_project": "opdlens-gsm8k",
+  "seed": 42,
+  "student": {
+    "model_id": "Qwen/Qwen3.5-2B",
+    "dtype": "bf16",
+    "attn_impl": "sdpa"
+  },
+  "teacher": {
+    "model_id": "Qwen/Qwen3.5-9B",
+    "dtype": "bf16",
+    "attn_impl": "sdpa"
+  },
+  "arm": {
+    "type": "symmetric_jlens",
+    "aux_weight": 0.01,
+    "aux_token_policy": "shared",
+    "teacher_layers": [
+      16,
+      24
+    ],
+    "temperature": 1.5,
+    "student_jacobian_path": "/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens-cot-ext.pt",
+    "teacher_jacobian_path": "/gdata/users/duanyll/jlens/qwen3p5_9b_v2/lens.pt",
+    "kl": "reverse"
+  },
+  "base_beta": 1.0,
+  "base_temperature": 1.0,
+  "enable_thinking": false,
+  "train_benchmark": {
+    "type": "gsm8k",
+    "split": "train",
+    "system_prompt": null
+  },
+  "eval_benchmarks": [
+    {
+      "type": "gsm8k",
+      "split": "test",
+      "system_prompt": null,
+      "few_shot_num": 4,
+      "answer_instruction": "Please reason step by step, and put your final answer within \\boxed{}.",
+      "eval_temperature": 0.0,
+      "eval_top_p": 1.0,
+      "avg_k": 1,
+      "eval_max_tokens": 2048
+    }
+  ],
+  "eval_max_samples": null,
+  "rollout_backend": "vllm",
+  "rollout_temperature": 1.0,
+  "rollout_top_p": 1.0,
+  "rollout_max_tokens": 768,
+  "vllm_gpu_memory_utilization": 0.25,
+  "vllm_max_model_len": 4096,
+  "vllm_enforce_eager": false,
+  "global_batch_size": 96,
+  "rollouts_per_prompt": 1,
+  "train_steps": 300,
+  "eval_steps": 50,
+  "eval_at_start": true,
+  "checkpoint_interval": 100,
+  "checkpoint_root": "/gdata/users/duanyll/opdlens/ckpt/gsm8k-revkl/symjlens-l16l24-rev-t15-full",
+  "optimizer_config": {
+    "class_name": "AdamW",
+    "lr": 2e-05,
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "weight_decay": 0.1
+  },
+  "scheduler_config": {
+    "class_name": "get_cosine_schedule_with_warmup",
+    "num_warmup_steps": 30,
+    "num_training_steps": 300
+  },
+  "clip_grad_norm": 1.0
+}
