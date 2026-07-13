@@ -162,7 +162,7 @@ the [16,24] aux was over-weighted / too broad.
 | **C jlens [12,16] × reverse** | **0.851** | **+0.015** | > 1 se — robust (single seed) |
 | C jlens [16,24] reverse | 0.846 | +0.010 | tie |
 | B logit_lens l24 | 0.845 | +0.008 | tie |
-| E symjlens [24,28] rev | 0.845‡ (s250) | +0.008 | tie (running) |
+| E symjlens [24,28] rev | 0.848 | +0.012 | tie |
 | E symjlens [16,24] reverse | 0.841 | +0.005 | tie |
 | C jlens [12,20] fwd | 0.841 | +0.005 | tie |
 
@@ -200,12 +200,26 @@ on the champion, since the aux is clearly helping and its weight is untuned for 
 |---|---|---|---|---|
 | **[12,16]** | **0.851** | | [12,20] | 0.833 |
 | [16,24] | 0.846 | | [12,24] | 0.832 |
-| [8,12] | 0.839 | | [16,20] | 0.830 |
-| [20,24] / [24,28] | ‡ running | | [20] (single) | 0.837 |
+| [20,24] | 0.842 | | [16,20] | 0.830 |
+| [8,12] | 0.839 | | [24,28] | 0.829 |
+| [20] (single) | 0.837 | | | |
 
-Non-monotonic: the reverse-KL peak is **[12,16]** (an early **workspace-band** pair, matching
-the depth prior), *not* the deep [16,24]. [16,20] and [12,24] are surprisingly poor — the
-pair has to sit squarely in the 12–16 band.
+Non-monotonic: C's reverse-KL peak is **[12,16]** (an early **workspace-band** pair, matching
+the depth prior), *not* the deep pairs — acc falls off monotonically as the pair moves deeper
+([12,16] 0.851 → [16,24] 0.846 → [20,24] 0.842 → [24,28] 0.829).
+
+**E `symmetric_jlens` reverse-KL, by layer pair** (aux 0.01):
+
+| layers | acc | | layers | acc |
+|---|---|---|---|---|
+| **[24,28]** | **0.848** | | [12,20] | 0.840 |
+| [20,24] | 0.847‡ (s200) | | [12,24] | 0.838 |
+| [16,24] | 0.841 | | | |
+
+**Opposite of C:** E reverse-KL likes the **deep** band ([24,28] > [20,24] > [16,24]), where C
+likes the early [12,16]. The symmetric (both-sided) readout apparently wants the deeper teacher
+signal that C's teacher-only readout does not. `aux_weight` tuning on the champions is a dead
+knob — moving it off 0.01 (to 0.005/0.02) hurts both C and E (≈0.82, provisional).
 
 **Temperature=2 on the aux (softer lens targets):**
 
