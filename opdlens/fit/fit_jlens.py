@@ -23,6 +23,30 @@ from ..utils.logging import console, get_logger
 logger = get_logger(__name__)
 
 
+def _read_hf_rows(
+    hf_id: str,
+    split: str,
+    hf_name: str | None,
+    revision: str | None,
+) -> list[dict[str, Any]]:
+    """Load a HF dataset split for calibration. A comma-separated ``hf_name`` loads
+    each config and round-robin interleaves the rows, so any contiguous
+    ``--prompt-offset`` slice stays balanced across the configs (e.g. the seven
+    hendrycks_math subjects). A single name keeps the original behavior."""
+    names: list[str | None] = (
+        [n.strip() for n in hf_name.split(",")] if hf_name else [None]
+    )
+    if len(names) == 1:
+        return list(read_hf(hf_id, split, name=names[0], revision=revision))
+    shards = [list(read_hf(hf_id, split, name=n, revision=revision)) for n in names]
+    interleaved: list[dict[str, Any]] = []
+    for i in range(max(len(s) for s in shards)):
+        for s in shards:
+            if i < len(s):
+                interleaved.append(s[i])
+    return interleaved
+
+
 def _calibration_texts(
     rows: Sequence[dict[str, Any]],
     tokenizer: Any,
@@ -58,7 +82,17 @@ def main() -> None:
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--prompts", help="Calibration prompts (.jsonl).")
     source.add_argument("--hf-id", help="Hugging Face calibration dataset id.")
-    parser.add_argument("--hf-name", default=None)
+    parser.add_argument(
+        "--hf-name",
+        default=None,
+        help="HF config name. Comma-separated names are round-robin interleaved into "
+        "one subject-balanced stream (e.g. the seven hendrycks_math subjects).",
+    )
+    parser.add_argument(
+        "--hf-revision",
+        default=None,
+        help="Pin the HF dataset revision (commit hash) for a reproducible fit.",
+    )
     parser.add_argument("--split", default="train")
     parser.add_argument("--prompt-key", default="question")
     parser.add_argument("--answer-key", default="answer")
@@ -93,7 +127,7 @@ def main() -> None:
     if args.prompts:
         all_rows = read_jsonl(args.prompts)
     else:
-        all_rows = list(read_hf(args.hf_id, args.split, name=args.hf_name))
+        all_rows = _read_hf_rows(args.hf_id, args.split, args.hf_name, args.hf_revision)
     rows = all_rows[args.prompt_offset : args.prompt_offset + args.n_prompts]
     prompts = _calibration_texts(
         rows,
