@@ -83,8 +83,8 @@ class GenerationMixin(BaseTrainer):
 
     # ------------------------------- Lifecycle -------------------------------- #
 
-    def load_student(self) -> None:
-        self.student.load(self.device, trainable=True)
+    def load_student(self, *, trainable: bool = True) -> None:
+        self.student.load(self.device, trainable=trainable)
 
     def init_generation(self) -> None:
         if self.rollout_backend != "vllm":
