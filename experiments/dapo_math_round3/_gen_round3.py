@@ -135,5 +135,31 @@ make(
     {"teacher_layers": [16, 24], "kl": "reverse", "temperature": 2.0},
 )
 
+# --- Wave B: the C/E champions re-run with the round-3 MATH-calibrated lenses -----
+# (jobs 4414/4415) + their forward-KL siblings. Against Wave A's GSM8K-lens champions
+# this factors the calibration gain apart from the reverse-KL gain. Submit with
+# `--dependency=afterok:<teacher-fit-job>` so they wait for the 9B lens artifact.
+TEACHER_MATH = "/gdata/users/duanyll/opdlens/artifacts/qwen3p5-9b-jlens-math.pt"
+STUDENT_MATH = "/gdata/users/duanyll/opdlens/artifacts/qwen3p5-2b-jlens-math.pt"
+_KL = {"reverse": "rev", "forward": "fwd"}
+for _kl in ("reverse", "forward"):
+    make(
+        "jlens_full_round2.jsonc",
+        f"c-l12l16-{_KL[_kl]}-mathlens-r3",
+        {"teacher_layers": [12, 16], "kl": _kl, "jacobian_path": TEACHER_MATH},
+    )
+for _kl, _temp in (("reverse", 2.0), ("forward", 1.0)):
+    make(
+        "symjlens_full_round2.jsonc",
+        f"e-l16l24-{_KL[_kl]}-mathlens-r3",
+        {
+            "teacher_layers": [16, 24],
+            "kl": _kl,
+            "temperature": _temp,
+            "student_jacobian_path": STUDENT_MATH,
+            "teacher_jacobian_path": TEACHER_MATH,
+        },
+    )
+
 # --- Final-checkpoint eval config (MATH-5000 + AIME24/25 + AIMO, OPRD protocol) ---
 make_finals()

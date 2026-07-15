@@ -152,7 +152,27 @@ the [16,24] aux was over-weighted / too broad.
 | | | | | E symjlens | [16,20] fwd | 0.827 |
 
 **Reverse-KL @ [16,24]:** C 0.835→0.846 (+0.011), E 0.836→0.841 (+0.005), B 0.819→0.817
-(no help). Reverse-KL helps the **Jacobian** arms, not logit-lens.
+(no help). Reverse-KL helps the **Jacobian** arms at this pair — but the B control below
+shows it is really a *shallow-layer* lever that helps logit_lens too, just not at B's deep peak.
+
+### B control — is reverse-KL really Jacobian-only? (4395–4399, full)
+
+Retesting reverse-KL on **logit_lens** across depths shows the "[16,24] no help" above was a
+layer artifact — the effect is **depth-dependent**:
+
+| B logit_lens config | acc | vs |
+|---|---|---|
+| [12,16] reverse | **0.842** | > [12,16] fwd 0.828 (**+0.014** — reverse *helps* shallow) |
+| [12,16] forward | 0.828 | the shallow-pair baseline |
+| [12,16] reverse × temp=2 | 0.837 | < temp=1 (0.842) — temp=2 hurts B (again) |
+| [24,28] reverse | 0.835 | deep pair ≈ A |
+| l24 reverse | 0.825 | ≪ plain l24 fwd 0.845 (**−0.020** — reverse *hurts* the deep peak) |
+
+**Reading:** reverse-KL is **not** Jacobian-specific — it is a **shallow / workspace-band**
+lever. It lifts logit_lens at [12,16] (0.828→0.842) just as it lifts C jlens there, but *hurts*
+B's deep l24 content (0.845→0.825). Since l24-forward (0.845) still beats every reverse-B, **B's
+champion is unchanged: plain deep l24, forward-KL.** Unifying prior: **forward-KL for deep
+content (B), reverse-KL for the shallow workspace band (C, and B at [12,16])**.
 
 ### Leaders vs A — first configs to clear the tie-margin
 
