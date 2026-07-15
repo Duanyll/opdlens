@@ -15,25 +15,24 @@ Each cell shows the **Top-K tokens and their probabilities**. The final layer's
 LogitLens row is the model's actual output distribution.
 
 This is a rewrite of the Anthropic `jacobian-lens` reference repo's static slice
-page into a live, interactive per-layer read-out. It reuses the `jlens` core
-(model wrapper, activation hooks, `J_l` transport) unchanged.
+page into a live, interactive per-layer read-out. It reuses the vendored
+`opdlens.jlens` core (model wrapper, activation hooks, `J_l` transport).
 
 ---
 
 ## Quick start
 
-Everything runs in a self-contained `uv` environment (Python 3.12). `uv` was
-installed to `~/.local/bin`.
+Everything runs in a self-contained `uv` environment (Python 3.12) linked to
+the parent `opdlens` checkout.
 
 ```bash
-cd /Users/bytedance/Desktop/JOPD/visual_workspace
-export PATH="$HOME/.local/bin:$PATH"
+cd visual_workspace
 
 # 1. (one-time, slow) fit + cache the Jacobian lens for the demo model
-uv run python fit_lens.py
+uv run fit_lens.py
 
 # 2. launch the app (loads the cached lens instantly)
-uv run python app.py
+uv run app.py
 ```
 
 Then open the printed local URL (default http://127.0.0.1:7860).
@@ -41,7 +40,7 @@ Then open the printed local URL (default http://127.0.0.1:7860).
 If you skip step 1, launch with LogitLens only:
 
 ```bash
-uv run python app.py --no-fit
+uv run app.py --no-fit
 ```
 
 The app will also auto-fit on first launch if no cached lens exists (adds a few
@@ -65,12 +64,12 @@ The demo uses **`Qwen/Qwen3.5-2B`** (24 layers, d_model 2048). Pick another
 HuggingFace decoder with:
 
 ```bash
-uv run python app.py --model Qwen/Qwen3-0.6B
+uv run app.py --model Qwen/Qwen3-0.6B
 # or
-LENS_MODEL=Qwen/Qwen3-0.6B uv run python app.py
+LENS_MODEL=Qwen/Qwen3-0.6B uv run app.py
 ```
 
-Fit its lens first with `uv run python fit_lens.py --model <name>`.
+Fit its lens first with `uv run fit_lens.py --model <name>`.
 
 ## Files
 
@@ -93,6 +92,6 @@ Because Qwen3.5 uses a linear-attention path with an O(seq²) buffer, keep
 `--dim-batch` modest (16 is safe on 36 GB unified memory) and `--max-seq-len`
 short; larger values can exhaust MPS memory.
 
-Defaults: layers `[6, 10, 14, 17, 20]`, 6 prompts, `dim_batch=16`,
-`max_seq_len=64`. LogitLens needs no fitting and is always available at every
-layer.
+By default, the fit CLI selects five uniformly spaced source layers and uses
+six prompts, `dim_batch=16`, and `max_seq_len=64`. LogitLens needs no fitting
+and is always available at every layer.

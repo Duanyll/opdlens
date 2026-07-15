@@ -3,7 +3,7 @@ name = "lens-visualizer"
 version = "0.1.0"
 description = "Interactive per-layer LogitLens vs Jacobian-Lens vocabulary visualizer"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12,<3.13"
 
 dependencies = [
     "torch>=2.4",
@@ -11,9 +11,12 @@ dependencies = [
     "huggingface_hub",
     "numpy",
     "gradio>=4.44",
-    # jlens core lives in the sibling repo; installed editable below.
-    "jlens",
+    "opdlens",
 ]
 
 [tool.uv.sources]
-jlens = { path = "../jacobian-lens", editable = true }
+opdlens = { path = "../", editable = true }
+
+[[tool.uv.index]]
+url = "https://mirrors.aliyun.com/pypi/simple/"
+default = true

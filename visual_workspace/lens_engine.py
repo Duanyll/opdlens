@@ -2,19 +2,21 @@
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
 
 import torch
 import transformers
 from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer
 
-import jlens
-from jlens.hooks import ActivationRecorder
-from jlens.lens import JacobianLens
+from opdlens import jlens
+from opdlens.jlens.hooks import ActivationRecorder
+from opdlens.jlens.lens import JacobianLens
+from opdlens.jlens.protocol import LensModel
+from opdlens.utils.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def pick_device() -> torch.device:
@@ -59,7 +61,7 @@ class LensEngine:
         self.model_name = model_name
         self.device = pick_device()
         self.hf_model, self.tokenizer = self._load_hf_model(model_name, self.device)
-        self.model = jlens.from_hf(self.hf_model, self.tokenizer)
+        self.model = cast(LensModel, jlens.from_hf(self.hf_model, self.tokenizer))
         self.lens: JacobianLens | None = None
 
     @staticmethod
@@ -74,14 +76,20 @@ class LensEngine:
         dtype = torch.float16 if device.type in {"cuda", "mps"} else torch.float32
         load_kwargs = {"trust_remote_code": True, "torch_dtype": dtype}
         try:
-            hf_model = AutoModelForCausalLM.from_pretrained(model_name, **load_kwargs)
+            hf_model = cast(
+                torch.nn.Module,
+                AutoModelForCausalLM.from_pretrained(model_name, **load_kwargs),
+            )
         except Exception as exc:
             logger.warning(
                 "AutoModelForCausalLM failed for %s (%s); falling back to AutoModel",
                 model_name,
                 exc,
             )
-            hf_model = AutoModel.from_pretrained(model_name, **load_kwargs)
+            hf_model = cast(
+                torch.nn.Module,
+                AutoModel.from_pretrained(model_name, **load_kwargs),
+            )
         hf_model.to(device)
         hf_model.eval()
         return hf_model, tokenizer
@@ -103,7 +111,9 @@ class LensEngine:
             self.lens = JacobianLens.load(str(lens_path))
             return self.lens
         if not fit_if_missing:
-            logger.info("No cached lens at %s; continuing with LogitLens only", lens_path)
+            logger.info(
+                "No cached lens at %s; continuing with LogitLens only", lens_path
+            )
             self.lens = None
             return None
         return self.fit_lens(
@@ -130,7 +140,9 @@ class LensEngine:
         max_seq_len: int = 64,
     ) -> JacobianLens:
         prompts = self._fallback_prompts(n_prompts)
-        out_path = Path(lens_path) if lens_path is not None else self.default_lens_path()
+        out_path = (
+            Path(lens_path) if lens_path is not None else self.default_lens_path()
+        )
         out_path.parent.mkdir(parents=True, exist_ok=True)
         checkpoint_path = out_path.with_suffix(".fit.ckpt.pt")
 
@@ -197,7 +209,9 @@ class LensEngine:
     ) -> AnalysisResult:
         input_ids = self.model.encode(prompt, max_length=max_seq_len)
         token_ids = input_ids[0].tolist()
-        token_strs = [self.tokenizer.decode([token_id]) for token_id in token_ids]
+        token_strs = [
+            cast(str, self.tokenizer.decode([token_id])) for token_id in token_ids
+        ]
         seq_len = len(token_ids)
         if seq_len == 0:
             raise ValueError("prompt produced zero tokens")
@@ -206,7 +220,9 @@ class LensEngine:
             position += seq_len
         position = max(0, min(position, seq_len - 1))
 
-        with ActivationRecorder(self.model.layers, at=range(self.model.n_layers)) as rec:
+        with ActivationRecorder(
+            self.model.layers, at=range(self.model.n_layers)
+        ) as rec:
             self.model.forward(input_ids)
             activations = {
                 layer: rec.activations[layer][0, position].detach()
@@ -216,9 +232,13 @@ class LensEngine:
         logit_rows: list[LayerReadout] = []
         if use_logitlens:
             for layer in range(self.model.n_layers):
-                logits = self.model.unembed(activations[layer].unsqueeze(0))[0].float().cpu()
+                logits = (
+                    self.model.unembed(activations[layer].unsqueeze(0))[0].float().cpu()
+                )
                 logit_rows.append(
-                    LayerReadout(layer=layer, top=self._topk(logits, top_k), available=True)
+                    LayerReadout(
+                        layer=layer, top=self._topk(logits, top_k), available=True
+                    )
                 )
 
         jlens_rows: list[LayerReadout] = []
@@ -227,12 +247,16 @@ class LensEngine:
             fitted = set(self.lens.source_layers) if self.lens is not None else set()
             for layer in range(self.model.n_layers):
                 if self.lens is None or layer not in fitted:
-                    jlens_rows.append(LayerReadout(layer=layer, top=[], available=False))
+                    jlens_rows.append(
+                        LayerReadout(layer=layer, top=[], available=False)
+                    )
                     continue
                 transported = self.lens.transport(activations[layer].float(), layer)
                 logits = self.model.unembed(transported.unsqueeze(0))[0].float().cpu()
                 jlens_rows.append(
-                    LayerReadout(layer=layer, top=self._topk(logits, top_k), available=True)
+                    LayerReadout(
+                        layer=layer, top=self._topk(logits, top_k), available=True
+                    )
                 )
 
         return AnalysisResult(
@@ -255,7 +279,7 @@ class LensEngine:
         return [
             TokenProb(
                 token_id=int(token_id),
-                token_str=self.tokenizer.decode([int(token_id)]),
+                token_str=cast(str, self.tokenizer.decode([int(token_id)])),
                 prob=float(prob),
             )
             for prob, token_id in zip(values.tolist(), indices.tolist(), strict=True)
@@ -263,4 +287,4 @@ class LensEngine:
 
     def tokenize_preview(self, prompt: str, *, max_seq_len: int = 512) -> list[str]:
         input_ids = self.model.encode(prompt, max_length=max_seq_len)[0].tolist()
-        return [self.tokenizer.decode([token_id]) for token_id in input_ids]
+        return [cast(str, self.tokenizer.decode([token_id])) for token_id in input_ids]

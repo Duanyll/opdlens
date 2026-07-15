@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import argparse
-import logging
 import os
 
 from lens_engine import LensEngine
 
-logging.basicConfig(level=logging.INFO)
+from opdlens.utils.logging import console
 
 DEFAULT_MODEL = os.environ.get("LENS_MODEL", "Qwen/Qwen3.5-2B")
 
@@ -50,7 +49,7 @@ def main() -> None:
         dim_batch=args.dim_batch,
         max_seq_len=args.max_seq_len,
     )
-    print(f"Saved lens to {engine.default_lens_path()}")
+    console.print(f"Saved lens to {engine.default_lens_path()}")
 
 
 if __name__ == "__main__":
