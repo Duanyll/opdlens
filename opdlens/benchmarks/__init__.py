@@ -10,6 +10,7 @@ from .base import BaseBenchmark
 from .gsm8k import Gsm8kBenchmark
 from .math_bench import (
     AimeBenchmark,
+    AimoBenchmark,
     DapoMathBenchmark,
     Math500Benchmark,
     MathBenchmark,
@@ -23,6 +24,7 @@ Benchmark = Annotated[
     | Annotated[MathBenchmark, Tag("math")]
     | Annotated[Math500Benchmark, Tag("math500")]
     | Annotated[AimeBenchmark, Tag("aime")]
+    | Annotated[AimoBenchmark, Tag("aimo")]
     | Annotated[MathTrainBenchmark, Tag("math_train")],
     Discriminator("type"),
 ]
@@ -37,6 +39,7 @@ def parse_benchmark(conf: dict[str, Any]) -> BaseBenchmark:
 
 __all__ = [
     "AimeBenchmark",
+    "AimoBenchmark",
     "BaseBenchmark",
     "Benchmark",
     "DapoMathBenchmark",

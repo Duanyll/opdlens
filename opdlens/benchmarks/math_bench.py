@@ -129,11 +129,54 @@ class MathBenchmark(MathVerifyBenchmark):
         )
 
 
+# AIME gold answers are bare integers, but the source schema differs by year: 2024
+# boxes the answer inside `solution`, 2025 exposes a bare `answer` field. Both are
+# normalized by ``extract_answer`` in grading.
+_AIME_SOURCE: dict[int, tuple[str, str]] = {
+    2024: ("math-ai/aime24", "solution"),
+    2025: ("math-ai/aime25", "answer"),
+}
+
+
 class AimeBenchmark(MathVerifyBenchmark):
+    """AIME competition set (30 problems). Tiny and high-variance, so eval with
+    avg@k (the OPRD protocol uses k=16 at temperature 0.7). ``year`` picks the
+    source dataset; the boxed-vs-bare gold is handled by ``extract_answer``."""
+
     type: Literal["aime"] = "aime"
+    year: Literal[2024, 2025] = 2024
+    question_key: str = "problem"
+    split: str = "test"
+
+    def _load_rows(self, split: str | None) -> Any:
+        if self.path is not None:
+            return super()._load_rows(split)
+        hf_id, _ = _AIME_SOURCE[self.year]
+        return read_hf(hf_id, split or self.split)
+
+    def _row_to_example(self, row: dict[str, Any]) -> Example:
+        _, answer_key = _AIME_SOURCE[self.year]
+        return Example(question=str(row[self.question_key]), gold=str(row[answer_key]))
+
+
+class AimoBenchmark(MathVerifyBenchmark):
+    """AI-MO validation AMC = AMC 2022 + 2023 (83 problems); the OPRD 'AIMO' set.
+    Gold ``answer`` is a numeric string (e.g. ``142.0``), graded by math_verify."""
+
+    type: Literal["aimo"] = "aimo"
+    hf_id: str | None = "AI-MO/aimo-validation-amc"
+    split: str = "train"
     question_key: str = "problem"
     answer_key: str = "answer"
-    year: int = 2024
+
+    def _load_rows(self, split: str | None) -> Any:
+        # The eval loop always requests the "test" split, but this validation set
+        # ships only a "train" split — pin to our own ``split`` and ignore the hint.
+        if self.path is not None:
+            return super()._load_rows(split)
+        if self.hf_id is None:
+            raise ValueError("aimo needs a path or hf_id")
+        return read_hf(self.hf_id, self.split)
 
 
 class MathTrainBenchmark(MathVerifyBenchmark):

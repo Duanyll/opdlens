@@ -41,10 +41,79 @@ def make(base_name: str, name: str, arm_override: dict) -> None:
     cfg["arm"].update(arm_override)
     cfg["experiment_name"] = name
     cfg["trackio_project"] = "opdlens-math"
-    cfg["checkpoint_root"] = f"/gdata/users/duanyll/opdlens/ckpt/dapo-math-round3/{name}"
+    cfg["checkpoint_root"] = (
+        f"/gdata/users/duanyll/opdlens/ckpt/dapo-math-round3/{name}"
+    )
     path = OUT / (name.replace("-", "_") + ".jsonc")
     path.write_text(json.dumps(cfg, indent=2) + "\n")
     print(f"wrote {path.relative_to(ROOT)}  arm={cfg['arm']['type']} eval=math500")
+
+
+MATH_SUBJECTS = [
+    "algebra",
+    "counting_and_probability",
+    "geometry",
+    "intermediate_algebra",
+    "number_theory",
+    "prealgebra",
+    "precalculus",
+]
+MATH_SYSTEM = (
+    "Solve the following problem step by step. Put your final answer within \\boxed{}."
+)
+# AIME/AIMO decode + metric per OPRD (arXiv:2606.06021): Avg@16, temp 0.7, top_p 0.95,
+# zero-shot with no system prompt and a trailing boxed instruction. eval_max_tokens is
+# 4096 (not OPRD's 31744 — that is for long-CoT R1-distill models; our student is a
+# non-thinking Qwen3.5-2B trained at 2048).
+OPRD = {
+    "system_prompt": None,
+    "answer_instruction": (
+        "Please reason step by step, and put your final answer within \\boxed{}."
+    ),
+    "eval_temperature": 0.7,
+    "eval_top_p": 0.95,
+    "avg_k": 16,
+    "eval_max_tokens": 4096,
+}
+# Final-checkpoint eval: MATH-5000 stays greedy avg@1 (comparable to the round-2
+# MATH numbers, se ~ 0.007) while the three competition sets use the OPRD protocol.
+FINALS_EVAL = [
+    {
+        "type": "math",
+        "hf_id": "EleutherAI/hendrycks_math",
+        "hf_revision": "21a5633873b6a120296cce3e2df9d5550074f4a3",
+        "subjects": MATH_SUBJECTS,
+        "split": "test",
+        "system_prompt": MATH_SYSTEM,
+        "eval_temperature": 0.0,
+        "eval_top_p": 1.0,
+        "avg_k": 1,
+        "eval_max_tokens": 2048,
+    },
+    {"type": "aime", "year": 2024, **OPRD},
+    {"type": "aime", "year": 2025, **OPRD},
+    {"type": "aimo", **OPRD},
+]
+
+
+def make_finals() -> None:
+    """Eval-only config for the finals: run with `opdlens eval <cfg> --checkpoint
+    <ckpt>` (or with no checkpoint to score the bare/teacher model). Student is the
+    2B base; --checkpoint supplies the trained weights. A wider vLLM context holds
+    the 4096-token AIME generations."""
+    cfg = json.loads((R2 / "logits_full_round2.jsonc").read_text())
+    cfg["arm"] = {"type": "logits"}
+    cfg["eval_benchmarks"] = FINALS_EVAL
+    cfg["eval_max_samples"] = None
+    cfg["vllm_max_model_len"] = 8192
+    cfg["vllm_gpu_memory_utilization"] = 0.6
+    cfg["experiment_name"] = "finals-eval"
+    cfg["trackio_project"] = "opdlens-math-finals"
+    cfg["checkpoint_root"] = "/gdata/users/duanyll/opdlens/ckpt/dapo-math-round3/_eval"
+    path = OUT / "finals_eval.jsonc"
+    path.write_text(json.dumps(cfg, indent=2) + "\n")
+    ev = [b["type"] + (f"-{b['year']}" if "year" in b else "") for b in FINALS_EVAL]
+    print(f"wrote {path.relative_to(ROOT)}  eval={ev}")
 
 
 # --- Wave A: GSM8K champions transferred to DAPO, existing lenses, MATH-500 eval ---
@@ -65,3 +134,6 @@ make(
     "e-l16l24-rev-t2-full-r3",
     {"teacher_layers": [16, 24], "kl": "reverse", "temperature": 2.0},
 )
+
+# --- Final-checkpoint eval config (MATH-5000 + AIME24/25 + AIMO, OPRD protocol) ---
+make_finals()

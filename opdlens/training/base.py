@@ -100,7 +100,11 @@ class BaseTrainer(BaseModel):
         )
 
     def cleanup(self) -> None:
-        if self._world_size > 1 and dist.is_available() and dist.is_initialized():
+        # Destroy whatever default process group is live at exit. Even at
+        # world_size == 1 (e.g. ``opdlens eval`` on a single GPU) the colocated vLLM
+        # engine initializes a TP=1 group; leaving it undestroyed emits the NCCL
+        # shutdown warning and makes torchrun exit non-zero.
+        if dist.is_available() and dist.is_initialized():
             try:
                 dist.destroy_process_group()
             except Exception:
